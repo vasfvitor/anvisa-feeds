@@ -1,0 +1,16 @@
+# python
+__pycache__/
+*.pyc
+.venv/
+dist/
+build/
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+
+# generated site (deployed from the workflow artifact, never committed)
+site/
+
+# never commit credentials
+credentials.env
+.env

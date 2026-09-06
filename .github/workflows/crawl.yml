@@ -1,0 +1,59 @@
+name: crawl
+
+# Daily: snapshot every fila de análise through the official API, commit the snapshot, rebuild
+# the static feeds and deploy them to GitHub Pages. Needs two repository secrets,
+# ANVISA_CLIENT_ID and ANVISA_CLIENT_SECRET, and Pages set to "GitHub Actions" as the source.
+# A crawl is a few hundred requests at 1/s; the client's throttle paces it.
+
+on:
+  schedule:
+    - cron: "0 9 * * *"   # 06:00 America/Sao_Paulo
+  workflow_dispatch:
+
+permissions:
+  contents: write   # commit the snapshot
+  pages: write
+  id-token: write
+
+concurrency:
+  group: crawl
+  cancel-in-progress: false   # never abort a crawl half-way
+
+jobs:
+  crawl:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10.0.1   # no floating major tag on this action
+        with:
+          python-version: "3.12"
+      - run: uv sync --locked
+      - name: Crawl
+        env:
+          ANVISA_CLIENT_ID: ${{ secrets.ANVISA_CLIENT_ID }}
+          ANVISA_CLIENT_SECRET: ${{ secrets.ANVISA_CLIENT_SECRET }}
+        run: uv run anvisa-feeds crawl --snapshots snapshots
+      - name: Commit the snapshot
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add snapshots
+          git commit -m "snapshot $(date -u +%F)" || echo "nothing to commit"
+          git push
+      - name: Build the site
+        run: uv run anvisa-feeds build --snapshots snapshots --site site
+      - uses: actions/upload-pages-artifact@v4
+        with:
+          path: site
+
+  deploy:
+    needs: crawl
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
