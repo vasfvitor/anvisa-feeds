@@ -21,8 +21,8 @@ time of the last successful fetch. It does not replace the official consulta.
 4. The site is deployed to GitHub Pages from the workflow artifact. Git history is the
    changelog.
 
-A day whose crawl failed for a subfila produces no events for it; absence of data is not a
-change. Every page carries the last successful fetch time, so a broken cron shows.
+A subfila with nothing queued answers an empty 404 and is recorded as empty. A day whose
+crawl failed for a subfila produces no events for it; absence of data is not a change. Every page carries the last successful fetch time, so a broken cron shows.
 
 ## Running it yourself
 

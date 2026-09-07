@@ -40,7 +40,7 @@ class FakeApi:
             sub = json.loads(request.read())["filter"]["subfila"]
             if sub in QUEUES:
                 return httpx.Response(200, json=load(QUEUES[sub]), headers=headers)
-            return httpx.Response(200, json=[], headers=headers)  # an empty queue
+            return httpx.Response(404, headers=headers)  # an empty queue: empty-bodied 404
         name = ROUTES.get((request.method, path))
         if name:
             return httpx.Response(200, json=load(name), headers=headers)

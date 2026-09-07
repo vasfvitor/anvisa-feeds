@@ -19,7 +19,7 @@ from datetime import date, datetime
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
-from anvisa import AnvisaError, Client
+from anvisa import AnvisaError, Client, NotFoundError
 
 BRT = ZoneInfo("America/Sao_Paulo")
 
@@ -90,6 +90,10 @@ def crawl(
                 requests += 1
                 try:
                     queue = client.fila.consulta(sub.id)
+                except NotFoundError:
+                    # a subfila with nothing queued answers an empty-bodied 404 (88 of 314 on
+                    # 2026-09-06); anvisa >= 0.3 returns [] itself, older versions raise
+                    queue = []
                 except AnvisaError as exc:
                     failed.append({"subfila": sub.id, "error": str(exc)})
                     log(f"subfila {sub.id}: {exc}")
