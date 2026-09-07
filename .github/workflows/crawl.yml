@@ -35,10 +35,11 @@ jobs:
     permissions:
       contents: write   # commit the snapshot
     steps:
-      - uses: actions/checkout@v7
-      - uses: astral-sh/setup-uv@v10.0.1   # no floating major tag on this action
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1   # v7.0.1
+      - uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d   # v10.0.1
         with:
           python-version: "3.12"
+          enable-cache: true
       - run: uv sync --locked
       - id: day
         run: echo "day=$(TZ=America/Sao_Paulo date +%F)" >> "$GITHUB_OUTPUT"
@@ -48,7 +49,7 @@ jobs:
           ANVISA_CLIENT_SECRET: ${{ secrets.ANVISA_CLIENT_SECRET }}
         run: uv run anvisa-feeds crawl --snapshots snapshots
       - name: Keep the snapshot as an artifact (survives a failed push)
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a   # v7.0.1
         with:
           name: snapshot-${{ steps.day.outputs.day }}
           path: |
@@ -73,16 +74,17 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1   # v7.0.1
         with:
           ref: main   # the commit the crawl job just pushed, not the SHA this run started from
-      - uses: astral-sh/setup-uv@v10.0.1
+      - uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d   # v10.0.1
         with:
           python-version: "3.12"
+          enable-cache: true
       - run: uv sync --locked
       - name: Build the site
         run: uv run anvisa-feeds build --snapshots snapshots --site site
-      - uses: actions/upload-pages-artifact@v4
+      - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9   # v5.0.0
         with:
           path: site
 
@@ -98,4 +100,4 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - id: deployment
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346   # v5.0.1
