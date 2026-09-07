@@ -37,6 +37,10 @@ def test_build_site_from_two_days(client, tmp_path):
     assert result == {"feeds": 17, "days": 2, "latest": "2026-09-07"}
     assert (site / "index.html").exists()
 
+    raw = (site / "fila" / "167.xml").read_bytes()
+    assert raw.startswith(b'<?xml version="1.0" encoding="utf-8"?>\n')
+    assert b'<?xml-stylesheet type="text/xsl" href="../feed.xsl"?>' in raw[:200]
+    assert (site / "feed.xsl").exists()
     feed = ET.parse(site / "fila" / "167.xml").getroot()
     assert feed.find(f"{ATOM}id").text == "tag:x.test,2026:f:fila/167"
     entries = feed.findall(f"{ATOM}entry")

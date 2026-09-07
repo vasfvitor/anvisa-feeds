@@ -18,6 +18,7 @@ time of the last successful fetch. It does not replace the official consulta.
 3. `anvisa-feeds build` diffs consecutive days per subfila (entered, left, moved) and writes
    `site/`: `index.html`, and `fila/<id>.xml` + `fila/<id>.html` for every subfila. One feed
    entry per subfila per day; its content lists the day's events and the queue as it stands.
+   Feeds carry an XSL style sheet, so a browser shows a readable page instead of raw XML.
 4. The site is deployed to GitHub Pages from the workflow artifact. Git history is the
    changelog.
 

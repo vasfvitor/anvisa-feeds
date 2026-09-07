@@ -73,7 +73,42 @@ def atom_feed(
         ET.SubElement(entry, "updated").text = e["updated"]
         ET.SubElement(entry, "link", rel="alternate", href=e["link"])
         ET.SubElement(entry, "content", type="html").text = e["content"]
-    return ET.tostring(feed, encoding="utf-8", xml_declaration=True)
+    # the stylesheet makes a browser show a readable page instead of raw XML; readers ignore it
+    return (
+        b'<?xml version="1.0" encoding="utf-8"?>\n'
+        b'<?xml-stylesheet type="text/xsl" href="../feed.xsl"?>\n'
+        + ET.tostring(feed, encoding="unicode").encode("utf-8")
+    )
+
+
+FEED_XSL = """<?xml version="1.0" encoding="utf-8"?>
+<xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
+  xmlns:atom="http://www.w3.org/2005/Atom" exclude-result-prefixes="atom">
+<xsl:output method="html" encoding="utf-8" indent="yes"/>
+<xsl:template match="/">
+<html lang="pt-BR"><head><meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title><xsl:value-of select="atom:feed/atom:title"/></title>
+<style>body{font:15px/1.4 system-ui,sans-serif;max-width:60rem;margin:2rem auto;
+padding:0 1rem;color:#222}
+.box{background:#f4f6f8;border-left:4px solid #0645ad;padding:.8rem 1rem;margin:1rem 0}
+ol li{margin:.15rem 0}a{color:#0645ad}.entry{margin:1.5rem 0}h2{font-size:1.1em}</style></head>
+<body>
+<h1><xsl:value-of select="atom:feed/atom:title"/></h1>
+<div class="box"><strong>Isto é um feed Atom.</strong> Para receber as mudanças desta fila, copie o
+endereço desta página e cole no seu leitor de feeds (Feedly, Inoreader, NetNewsWire, Thunderbird…).
+A versão para ler no navegador está em
+<a><xsl:attribute name="href">
+<xsl:value-of select="atom:feed/atom:link[@rel='alternate']/@href"/>
+</xsl:attribute>página da fila</a>.</div>
+<xsl:for-each select="atom:feed/atom:entry">
+<div class="entry"><h2><xsl:value-of select="atom:title"/></h2>
+<xsl:value-of select="atom:content" disable-output-escaping="yes"/></div>
+</xsl:for-each>
+</body></html>
+</xsl:template>
+</xsl:stylesheet>
+"""
 
 
 def page(title: str, body: str, *, stamp: str) -> str:
@@ -112,6 +147,7 @@ def build_site(
     )
     base_url = base_url.rstrip("/")
     (site / "fila").mkdir(parents=True, exist_ok=True)
+    (site / "feed.xsl").write_text(FEED_XSL, encoding="utf-8")
 
     # events per subfila per day, from consecutive snapshots inside the window
     per_sub: dict[int, list[tuple[date, list[dict], list[dict]]]] = {}
@@ -151,7 +187,7 @@ def build_site(
         )
         latest_day, latest_events, latest_queue = max(history, key=lambda h: h[0])
         body = (
-            f'<p><a href="{sub}.xml">Feed Atom</a> · '
+            f'<p><a href="{sub}.xml">Feed Atom</a> (cole o endereço no seu leitor de feeds) · '
             '<a href="../index.html">todas as filas</a></p>'
             f"<h2>{latest_day.isoformat()}</h2>" + events_html(latest_events, latest_queue)
         )
