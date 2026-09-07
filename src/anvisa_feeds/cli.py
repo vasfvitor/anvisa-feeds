@@ -24,14 +24,20 @@ def crawl_cmd(
     day: datetime | None = typer.Option(
         None, formats=["%Y-%m-%d"], help="snapshot date; default today in Brasília"
     ),
+    refresh_catalog: bool | None = typer.Option(
+        None,
+        "--refresh-catalog/--no-refresh-catalog",
+        help="re-walk áreas/grupos/subfilas; default: Mondays, or when catalog.json is missing",
+    ),
 ) -> None:
-    """One request per catalog level plus one per subfila, throttled to the gateway's rate."""
+    """One request per subfila, plus the catalog walk on Mondays; throttled to the gateway."""
     with handle_errors(), make_client() as client:
         meta = crawl(
             client,
             snapshots,
             day=day.date() if day else None,
             areas=area or None,
+            refresh_catalog=refresh_catalog,
             log=lambda s: typer.echo(s, err=True),
         )
     typer.echo(json.dumps(meta, ensure_ascii=False))

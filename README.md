@@ -10,9 +10,10 @@ time of the last successful fetch. It does not replace the official consulta.
 
 ## How it works
 
-1. A scheduled GitHub Action runs `anvisa-feeds crawl` once a day: one request per área,
-   grupo and subfila catalog, then one `fila/consulta` per subfila. A few hundred requests at
-   the gateway's rate of one per second.
+1. A scheduled GitHub Action runs `anvisa-feeds crawl` once a day: one `fila/consulta` per
+   subfila in `catalog.json`, about 314 requests at the gateway's rate of one per second. On
+   Mondays it first re-walks the área, grupo and subfila catalog (about 70 more requests), so
+   a new subfila is noticed within a week; `--refresh-catalog` forces that on any day.
 2. The snapshot is committed under `snapshots/` as one gzipped JSON Lines file per day (one
    line per subfila), plus a `meta.json` with counts and timings and the current
    `catalog.json` of names.

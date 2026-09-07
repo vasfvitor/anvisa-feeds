@@ -7,9 +7,10 @@ Snapshot layout under the snapshots directory:
     YYYY-MM-DD.meta.json    request count, timings, subfilas crawled / failed
 
 A subfila with an empty `rows` was crawled and has nothing queued; a subfila absent from the
-file was not crawled that day. One request per catalog level plus one per subfila; the
-client's throttle keeps it at the gateway's refill rate (1 request/s, bucket shared per
-source address).
+file was not crawled that day. One request per subfila, plus one per catalog level on the
+days the catalog is re-walked (Mondays, or when catalog.json is missing); the client's
+throttle keeps it at the gateway's refill rate (1 request/s, bucket shared per source
+address).
 """
 
 from __future__ import annotations
@@ -57,24 +58,9 @@ def write_snapshot(out: Path, day: date, queues: Iterable[dict]) -> None:
             fh.write(json.dumps(queue, ensure_ascii=False) + "\n")
 
 
-def crawl(
-    client: Client,
-    out: Path,
-    *,
-    day: date | None = None,
-    areas: Iterable[int] | None = None,
-    log: Callable[[str], None] = print,
-) -> dict:
-    """Crawl and write the day's files. Returns the meta dict. A failed subfila is recorded in
-    meta and skipped; the snapshot still holds every subfila that answered."""
-    day = day or today()
-    wanted = set(areas) if areas else None
-    out.mkdir(parents=True, exist_ok=True)
-    started = now()
+def walk_catalog(client: Client, wanted: set[int] | None = None) -> dict:
+    """área → grupo → subfila names and ids: 1 + areas + grupos requests."""
     catalog: dict[str, dict] = {"areas": {}, "grupos": {}, "subfilas": {}}
-    queues: list[dict] = []
-    failed: list[dict] = []
-
     for area in client.fila.areas():
         if wanted and area.id not in wanted:
             continue
@@ -87,21 +73,60 @@ def crawl(
                     "grupo": grupo.id,
                     "area": area.id,
                 }
-                try:
-                    rows = client.fila.consulta(sub.id)  # [] when nothing is queued
-                except AnvisaError as exc:
-                    failed.append({"subfila": sub.id, "error": str(exc)})
-                    log(f"subfila {sub.id}: {exc}")
-                    continue
-                queues.append(
-                    {
-                        "subfila": sub.id,
-                        "area": area.id,
-                        "grupo": grupo.id,
-                        "rows": [row_dict(r) for r in rows],
-                    }
-                )
-                log(f"subfila {sub.id} ({sub.descricao}): {len(rows)} rows")
+    return catalog
+
+
+def crawl(
+    client: Client,
+    out: Path,
+    *,
+    day: date | None = None,
+    areas: Iterable[int] | None = None,
+    refresh_catalog: bool | None = None,
+    log: Callable[[str], None] = print,
+) -> dict:
+    """Crawl and write the day's files. Returns the meta dict. A failed subfila is recorded in
+    meta and skipped; the snapshot still holds every subfila that answered.
+
+    The catalog is re-walked when `refresh_catalog` is true, or by default on Mondays and
+    whenever catalog.json is missing; other days reuse it, which saves the ~70 catalog
+    requests and means a new subfila is noticed within a week."""
+    day = day or today()
+    wanted = set(areas) if areas else None
+    out.mkdir(parents=True, exist_ok=True)
+    started = now()
+    if refresh_catalog is None:
+        refresh_catalog = day.weekday() == 0 or not (out / "catalog.json").exists()
+    if refresh_catalog:
+        catalog = walk_catalog(client, wanted)
+        catalog_requests = 1 + len(catalog["areas"]) + len(catalog["grupos"])
+    else:
+        catalog = load_catalog(out)
+        catalog_requests = 0
+    subfilas = {
+        int(sub): info
+        for sub, info in catalog["subfilas"].items()
+        if not wanted or info["area"] in wanted
+    }
+
+    queues: list[dict] = []
+    failed: list[dict] = []
+    for sub, info in subfilas.items():
+        try:
+            rows = client.fila.consulta(sub)  # [] when nothing is queued
+        except AnvisaError as exc:
+            failed.append({"subfila": sub, "error": str(exc)})
+            log(f"subfila {sub}: {exc}")
+            continue
+        queues.append(
+            {
+                "subfila": sub,
+                "area": info["area"],
+                "grupo": info["grupo"],
+                "rows": [row_dict(r) for r in rows],
+            }
+        )
+        log(f"subfila {sub} ({info['descricao']}): {len(rows)} rows")
 
     finished = now()
     meta = {
@@ -109,16 +134,17 @@ def crawl(
         "started": started.isoformat(),
         "finished": finished.isoformat(),
         "seconds": round((finished - started).total_seconds()),
-        # areas, one grupos call per area, one subfilas call per grupo, one consulta per subfila
-        "requests": 1 + len(catalog["areas"]) + len(catalog["grupos"]) + len(queues) + len(failed),
+        "catalog_refreshed": refresh_catalog,
+        "requests": catalog_requests + len(queues) + len(failed),
         "rows": sum(len(q["rows"]) for q in queues),
-        "subfilas_total": len(catalog["subfilas"]),
+        "subfilas_total": len(subfilas),
         "subfilas_crawled": len(queues),
         "failed": failed,
     }
     write_snapshot(out, day, queues)
     dump_json(out / f"{day.isoformat()}.meta.json", meta, indent=2)
-    dump_json(out / "catalog.json", catalog, indent=2, sort_keys=True)
+    if refresh_catalog:
+        dump_json(out / "catalog.json", catalog, indent=2, sort_keys=True)
     return meta
 
 
