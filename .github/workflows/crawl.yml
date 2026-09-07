@@ -4,16 +4,24 @@ name: crawl
 # the static feeds and deploy them to GitHub Pages. Needs two repository secrets,
 # ANVISA_CLIENT_ID and ANVISA_CLIENT_SECRET, and Pages set to "GitHub Actions" as the source.
 # A crawl is a few hundred requests at 1/s; the client's throttle paces it.
+#
+# Three jobs on purpose: a rendering or deploy failure can never lose a crawl. The snapshot is
+# also kept as a workflow artifact for 90 days, so a failed push can be recovered by hand.
+# "Run workflow" with build_only rebuilds the site from the committed snapshots without
+# spending any requests.
 
 on:
   schedule:
     - cron: "0 9 * * *"   # 06:00 America/Sao_Paulo
   workflow_dispatch:
+    inputs:
+      build_only:
+        description: "Rebuild and deploy the site from committed snapshots, no crawl"
+        type: boolean
+        default: false
 
 permissions:
-  contents: write   # commit the snapshot
-  pages: write
-  id-token: write
+  contents: read
 
 concurrency:
   group: crawl
@@ -21,8 +29,11 @@ concurrency:
 
 jobs:
   crawl:
+    if: ${{ !inputs.build_only }}
     runs-on: ubuntu-latest
     timeout-minutes: 60
+    permissions:
+      contents: write   # commit the snapshot
     steps:
       - uses: actions/checkout@v7
       - uses: astral-sh/setup-uv@v10.0.1   # no floating major tag on this action
@@ -34,13 +45,37 @@ jobs:
           ANVISA_CLIENT_ID: ${{ secrets.ANVISA_CLIENT_ID }}
           ANVISA_CLIENT_SECRET: ${{ secrets.ANVISA_CLIENT_SECRET }}
         run: uv run anvisa-feeds crawl --snapshots snapshots
-      - name: Commit the snapshot
+      - name: Keep the snapshot as an artifact (survives a failed push)
+        uses: actions/upload-artifact@v7
+        with:
+          name: snapshot
+          path: snapshots/
+          retention-days: 90
+          if-no-files-found: error
+      - name: Commit and push the snapshot
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add snapshots
-          git commit -m "snapshot $(TZ=America/Sao_Paulo date +%F)" || echo "nothing to commit"
-          git push
+          if git diff --cached --quiet; then echo "nothing to commit"; exit 0; fi
+          git commit -m "snapshot $(TZ=America/Sao_Paulo date +%F)"
+          # something may have landed on main during the crawl: rebase and retry, then fail loudly
+          git push || (git pull --rebase origin main && git push) \
+                   || (sleep 30 && git pull --rebase origin main && git push)
+
+  build:
+    needs: crawl
+    if: ${{ always() && (needs.crawl.result == 'success' || needs.crawl.result == 'skipped') }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: main   # the commit the crawl job just pushed, not the SHA this run started from
+      - uses: astral-sh/setup-uv@v10.0.1
+        with:
+          python-version: "3.12"
+      - run: uv sync --locked
       - name: Build the site
         run: uv run anvisa-feeds build --snapshots snapshots --site site
       - uses: actions/upload-pages-artifact@v4
@@ -48,9 +83,12 @@ jobs:
           path: site
 
   deploy:
-    needs: crawl
+    needs: build
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    permissions:
+      pages: write
+      id-token: write
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}

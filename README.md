@@ -22,6 +22,10 @@ time of the last successful fetch. It does not replace the official consulta.
 4. The site is deployed to GitHub Pages from the workflow artifact. Git history is the
    changelog.
 
+The workflow is three jobs, crawl, build and deploy, so a rendering or deploy failure never
+loses a crawl; the snapshot is also kept as a workflow artifact for 90 days in case the push
+fails. "Run workflow" with `build_only` rebuilds the site without any requests.
+
 A subfila with nothing queued answers an empty 404 and is recorded as empty. A day whose
 crawl failed for a subfila produces no events for it; absence of data is not a change. Every page carries the last successful fetch time, so a broken cron shows.
 
