@@ -22,16 +22,16 @@ wheels = [
 
 [[package]]
 name = "anvisa"
-version = "0.2.0"
+version = "0.3.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "httpx" },
     { name = "pydantic" },
     { name = "typer" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/05/c9/20fd20e3d555ce838696eb0df2a62d1d92274ae5e84083d702da27d6852f/anvisa-0.2.0.tar.gz", hash = "sha256:a23eaa0f3bbcb99af3982f0b5d7c2f2d0e78ff31cbd5202d0245ceb75ffcc1f2", size = 15368, upload-time = "2026-09-06T22:33:57.188Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/97/79/8123c20f5bf8e8cca72f6c731bd292fc6fc83edcd101edf6349f64fe3d37/anvisa-0.3.0.tar.gz", hash = "sha256:104f91a46c141a41bdaf97923dae81536dfd578f4387bd60a86a20e531aeb9a2", size = 16024, upload-time = "2026-09-07T00:32:01.523Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/26/e8/ae3cbf2ce7b190ea847485ccae6b60a1aa561e50c00f7a89ec08c20ca993/anvisa-0.2.0-py3-none-any.whl", hash = "sha256:8273c4b8b109da21fe6ce71463ae738d2982904524ec95dc9867e844bbde86db", size = 18373, upload-time = "2026-09-06T22:33:56.047Z" },
+    { url = "https://files.pythonhosted.org/packages/8b/f5/23921769d50f971e3a695113eb66435ce2e3bd6d6c94ba0147671199c6d9/anvisa-0.3.0-py3-none-any.whl", hash = "sha256:e5e27cbd9a181e78cd8def1910afde48bc0d9a99e06e9729afc1ebff67ef700b", size = 19035, upload-time = "2026-09-07T00:32:00.217Z" },
 ]
 
 [[package]]
@@ -51,7 +51,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "anvisa", specifier = ">=0.2.0,<1" },
+    { name = "anvisa", specifier = ">=0.3.0,<1" },
     { name = "typer", specifier = ">=0.12" },
 ]
 

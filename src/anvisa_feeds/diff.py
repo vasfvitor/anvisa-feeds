@@ -2,6 +2,16 @@
 
 from __future__ import annotations
 
+from collections import Counter
+
+FAR = 10**9  # sorts events without a current position (left) after everything else
+ORDER = {"entered": 0, "moved": 1, "left": 2}
+WORDS = [
+    ("entered", "entrou", "entraram"),
+    ("left", "saiu", "saíram"),
+    ("moved", "mudou de posição", "mudaram de posição"),
+]
+
 
 def key(row: dict) -> str:
     """A process can sit in one queue twice with two petitions (seen live: 25351.316782/2020-07
@@ -9,35 +19,32 @@ def key(row: dict) -> str:
     return f"{row.get('nuProcesso') or row.get('processo') or ''}|{row.get('expediente') or ''}"
 
 
+def event(kind: str, row: dict, de: int | None = None, para: int | None = None) -> dict:
+    return {
+        "type": kind,
+        "processo": row.get("processo"),
+        "expediente": row.get("expediente"),
+        "de": de,
+        "para": para,
+    }
+
+
 def diff_queue(prev: list[dict], curr: list[dict]) -> list[dict]:
     """Events for one subfila: entered, left, moved. Sorted by current position, then by the
     position the process used to have."""
     before = {key(r): r for r in prev}
     after = {key(r): r for r in curr}
-    events: list[dict] = []
+    events = []
     for k, row in after.items():
         old = before.get(k)
         if old is None:
-            events.append(
-                {"type": "entered", "processo": row["processo"], "para": row["posicao"], "row": row}
-            )
+            events.append(event("entered", row, para=row["posicao"]))
         elif old["posicao"] != row["posicao"]:
-            events.append(
-                {
-                    "type": "moved",
-                    "processo": row["processo"],
-                    "de": old["posicao"],
-                    "para": row["posicao"],
-                    "row": row,
-                }
-            )
-    for k, row in before.items():
-        if k not in after:
-            events.append(
-                {"type": "left", "processo": row["processo"], "de": row["posicao"], "row": row}
-            )
-    order = {"entered": 0, "moved": 1, "left": 2}
-    events.sort(key=lambda e: (e.get("para") or 10**9, order[e["type"]], e.get("de") or 0))
+            events.append(event("moved", row, old["posicao"], row["posicao"]))
+    events += [event("left", row, de=row["posicao"]) for k, row in before.items() if k not in after]
+    events.sort(
+        key=lambda e: (e["para"] if e["para"] is not None else FAR, ORDER[e["type"]], e["de"] or 0)
+    )
     return events
 
 
@@ -50,22 +57,6 @@ def diff_snapshots(
 
 
 def summary(events: list[dict]) -> str:
-    counts = {"entered": 0, "moved": 0, "left": 0}
-    for e in events:
-        counts[e["type"]] += 1
-    parts = []
-    if counts["entered"]:
-        parts.append(
-            f"{counts['entered']} entrou"
-            if counts["entered"] == 1
-            else f"{counts['entered']} entraram"
-        )
-    if counts["left"]:
-        parts.append(
-            f"{counts['left']} saiu" if counts["left"] == 1 else f"{counts['left']} saíram"
-        )
-    if counts["moved"]:
-        parts.append(
-            f"{counts['moved']} mudaram de posição" if counts["moved"] > 1 else "1 mudou de posição"
-        )
-    return ", ".join(parts) if parts else "sem mudanças"
+    counts = Counter(e["type"] for e in events)
+    parts = [f"{n} {one if n == 1 else many}" for kind, one, many in WORDS if (n := counts[kind])]
+    return ", ".join(parts) or "sem mudanças"

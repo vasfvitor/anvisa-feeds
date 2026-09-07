@@ -13,8 +13,9 @@ time of the last successful fetch. It does not replace the official consulta.
 1. A scheduled GitHub Action runs `anvisa-feeds crawl` once a day: one request per área,
    grupo and subfila catalog, then one `fila/consulta` per subfila. A few hundred requests at
    the gateway's rate of one per second.
-2. The snapshot is committed under `snapshots/` as one gzipped JSON Lines file per day, plus a
-   `meta.json` with counts and timings and the current `catalog.json` of names.
+2. The snapshot is committed under `snapshots/` as one gzipped JSON Lines file per day (one
+   line per subfila), plus a `meta.json` with counts and timings and the current
+   `catalog.json` of names.
 3. `anvisa-feeds build` diffs consecutive days per subfila (entered, left, moved) and writes
    `site/`: `index.html`, and `fila/<id>.xml` + `fila/<id>.html` for every subfila. One feed
    entry per subfila per day; its content lists the day's events and the queue as it stands.
@@ -34,18 +35,20 @@ crawl failed for a subfila produces no events for it; absence of data is not a c
 ```bash
 uv sync
 export ANVISA_CLIENT_ID=... ANVISA_CLIENT_SECRET=...   # or ~/.config/anvisa/credentials.env
-uv run anvisa-feeds crawl --area 8 --limit 3          # a smoke test: 3 subfilas
+uv run anvisa-feeds crawl --area 8                    # a smoke test: one área
 uv run anvisa-feeds crawl                             # everything
 uv run anvisa-feeds build && python -m http.server -d site
 uv run pytest                                          # fixture-only, no network
 ```
 
-## Snapshot row
+## Snapshot line
+
+One per crawled subfila; an empty `rows` means crawled and nothing queued.
 
 ```json
-{"area": 8, "grupo": 285, "subfila": 167, "posicao": 1, "processo": "25351.216322/2025-86",
- "nuProcesso": "25351216322202586", "expediente": "...", "assunto": "...",
- "dsAssunto": "...", "entrada": "2026-08-18"}
+{"subfila": 167, "area": 8, "grupo": 285, "rows": [
+  {"posicao": 1, "processo": "25351.216322/2025-86", "nuProcesso": "25351216322202586",
+   "expediente": "...", "assunto": "...", "dsAssunto": "...", "entrada": "2026-08-18"}]}
 ```
 
 Not affiliated with ANVISA. MIT.

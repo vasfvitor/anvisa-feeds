@@ -1,87 +1,29 @@
 """Build the static site: one Atom feed and one HTML page per subfila, plus an index.
 
-Feeds are regenerated from the last N snapshots on every build, so an entry is one subfila on
-one day, and its content lists that day's events plus the queue as it stands. Nothing is
-stored besides the snapshots.
+Feeds are regenerated from the last N snapshots on every build. An entry is one subfila on
+one day and lists that day's events; only the newest entry also carries the queue as it
+stands, so a feed stays small however long the window. Snapshots are read one day at a time.
 """
 
 from __future__ import annotations
 
 import html
-from datetime import date, datetime, time
+from datetime import date, datetime
 from pathlib import Path
 from xml.etree import ElementTree as ET
 
 from . import __version__
-from .crawl import BRT, load_catalog, load_meta, load_snapshot, snapshot_days
+from .crawl import describe, load_catalog, load_meta, load_snapshot, snapshot_days
 from .diff import diff_snapshots, summary
 
 ATOM = "http://www.w3.org/2005/Atom"
-
-
-def iso(day: date) -> str:
-    """The moment a snapshot is considered published: 06:00 in Brasília, as RFC 3339."""
-    return datetime.combine(day, time(6, 0), tzinfo=BRT).isoformat()
-
-
-def tag_uri(base_tag: str, *parts: str) -> str:
-    return f"tag:{base_tag}:" + "/".join(parts)
-
-
-def events_html(events: list[dict], queue: list[dict]) -> str:
-    out = ["<p>", html.escape(summary(events)), "</p>"]
-    if events:
-        out.append("<ul>")
-        for e in events:
-            p = html.escape(e["processo"] or "?")
-            if e["row"].get("expediente"):
-                p += f" (exp. {html.escape(e['row']['expediente'])})"
-            if e["type"] == "entered":
-                out.append(f"<li>{p}: entrou na posição {e['para']}</li>")
-            elif e["type"] == "left":
-                out.append(f"<li>{p}: saiu da fila (estava na posição {e['de']})</li>")
-            else:
-                out.append(f"<li>{p}: {e['de']} → {e['para']}</li>")
-        out.append("</ul>")
-    out.append(f"<p>Fila hoje ({len(queue)} processos):</p><ol>")
-    for r in queue:
-        out.append(
-            f'<li value="{r["posicao"]}">{html.escape(r["processo"] or "")} · '
-            f"{html.escape(r['dsAssunto'] or '')} · entrada {r['entrada'] or '?'}</li>"
-        )
-    out.append("</ol>")
-    return "".join(out)
-
-
-def atom_feed(
-    *, feed_id: str, title: str, self_url: str, alt_url: str, updated: str, entries: list[dict]
-) -> bytes:
-    feed = ET.Element("feed", xmlns=ATOM)
-    ET.SubElement(feed, "id").text = feed_id
-    ET.SubElement(feed, "title").text = title
-    ET.SubElement(feed, "updated").text = updated
-    ET.SubElement(feed, "link", rel="self", href=self_url)
-    ET.SubElement(feed, "link", rel="alternate", href=alt_url)
-    gen = ET.SubElement(feed, "generator", version=__version__)
-    gen.text = "anvisa-feeds"
-    ET.SubElement(feed, "author").append(ET.Element("name"))
-    feed.find("author/name").text = "anvisa-feeds (dados: ANVISA)"
-    for e in entries:
-        entry = ET.SubElement(feed, "entry")
-        ET.SubElement(entry, "id").text = e["id"]
-        ET.SubElement(entry, "title").text = e["title"]
-        ET.SubElement(entry, "updated").text = e["updated"]
-        ET.SubElement(entry, "link", rel="alternate", href=e["link"])
-        ET.SubElement(entry, "content", type="html").text = e["content"]
-    # the stylesheet makes a browser show a readable page instead of raw XML; readers ignore it
-    return (
-        b'<?xml version="1.0" encoding="utf-8"?>\n'
-        b'<?xml-stylesheet type="text/xsl" href="../feed.xsl"?>\n'
-        + ET.tostring(feed, encoding="unicode").encode("utf-8")
-    )
-
-
-FEED_XSL = """<?xml version="1.0" encoding="utf-8"?>
+CSS = (
+    "body{font:15px/1.4 system-ui,sans-serif;max-width:60rem;margin:2rem auto;"
+    "padding:0 1rem;color:#222}ol li{margin:.15rem 0}.stamp{color:#666;font-size:.9em}"
+    "a{color:#0645ad}.box{background:#f4f6f8;border-left:4px solid #0645ad;"
+    "padding:.8rem 1rem;margin:1rem 0}.entry{margin:1.5rem 0}h2{font-size:1.1em}"
+)
+FEED_XSL = f"""<?xml version="1.0" encoding="utf-8"?>
 <xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
   xmlns:atom="http://www.w3.org/2005/Atom" exclude-result-prefixes="atom">
 <xsl:output method="html" encoding="utf-8" indent="yes"/>
@@ -89,10 +31,7 @@ FEED_XSL = """<?xml version="1.0" encoding="utf-8"?>
 <html lang="pt-BR"><head><meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
 <title><xsl:value-of select="atom:feed/atom:title"/></title>
-<style>body{font:15px/1.4 system-ui,sans-serif;max-width:60rem;margin:2rem auto;
-padding:0 1rem;color:#222}
-.box{background:#f4f6f8;border-left:4px solid #0645ad;padding:.8rem 1rem;margin:1rem 0}
-ol li{margin:.15rem 0}a{color:#0645ad}.entry{margin:1.5rem 0}h2{font-size:1.1em}</style></head>
+<style>{CSS}</style></head>
 <body>
 <h1><xsl:value-of select="atom:feed/atom:title"/></h1>
 <div class="box"><strong>Isto é um feed Atom.</strong> Para receber as mudanças desta fila, copie o
@@ -111,14 +50,68 @@ A versão para ler no navegador está em
 """
 
 
+def tag_uri(base_tag: str, *parts: str) -> str:
+    return f"tag:{base_tag}:" + "/".join(parts)
+
+
+def events_html(events: list[dict], queue: list[dict] | None = None) -> str:
+    """The day's events as HTML; with `queue`, the current queue after them."""
+    out = ["<p>", html.escape(summary(events)), "</p>"]
+    if events:
+        out.append("<ul>")
+        for e in events:
+            p = html.escape(e["processo"] or "?")
+            if e["expediente"]:
+                p += f" (exp. {html.escape(e['expediente'])})"
+            if e["type"] == "entered":
+                out.append(f"<li>{p}: entrou na posição {e['para']}</li>")
+            elif e["type"] == "left":
+                out.append(f"<li>{p}: saiu da fila (estava na posição {e['de']})</li>")
+            else:
+                out.append(f"<li>{p}: {e['de']} → {e['para']}</li>")
+        out.append("</ul>")
+    if queue is not None:
+        out.append(f"<p>Fila hoje ({len(queue)} processos):</p><ol>")
+        for r in queue:
+            out.append(
+                f'<li value="{r["posicao"]}">{html.escape(r["processo"] or "")} · '
+                f"{html.escape(r['dsAssunto'] or '')} · entrada {r['entrada'] or '?'}</li>"
+            )
+        out.append("</ol>")
+    return "".join(out)
+
+
+def atom_feed(
+    *, feed_id: str, title: str, self_url: str, alt_url: str, updated: str, entries: list[dict]
+) -> bytes:
+    feed = ET.Element("feed", xmlns=ATOM)
+    ET.SubElement(feed, "id").text = feed_id
+    ET.SubElement(feed, "title").text = title
+    ET.SubElement(feed, "updated").text = updated
+    ET.SubElement(feed, "link", rel="self", href=self_url)
+    ET.SubElement(feed, "link", rel="alternate", href=alt_url)
+    ET.SubElement(feed, "generator", version=__version__).text = "anvisa-feeds"
+    ET.SubElement(ET.SubElement(feed, "author"), "name").text = "anvisa-feeds (dados: ANVISA)"
+    for e in entries:
+        entry = ET.SubElement(feed, "entry")
+        ET.SubElement(entry, "id").text = e["id"]
+        ET.SubElement(entry, "title").text = e["title"]
+        ET.SubElement(entry, "updated").text = e["updated"]
+        ET.SubElement(entry, "link", rel="alternate", href=e["link"])
+        ET.SubElement(entry, "content", type="html").text = e["content"]
+    # the stylesheet makes a browser show a readable page instead of raw XML; readers ignore it
+    return (
+        b'<?xml version="1.0" encoding="utf-8"?>\n'
+        b'<?xml-stylesheet type="text/xsl" href="../feed.xsl"?>\n'
+        + ET.tostring(feed, encoding="unicode").encode("utf-8")
+    )
+
+
 def page(title: str, body: str, *, stamp: str) -> str:
     return (
         '<!doctype html><html lang="pt-BR"><head><meta charset="utf-8">'
         '<meta name="viewport" content="width=device-width,initial-scale=1">'
-        f"<title>{html.escape(title)}</title>"
-        "<style>body{font:15px/1.4 system-ui,sans-serif;max-width:60rem;margin:2rem auto;"
-        "padding:0 1rem;color:#222}ol li{margin:.15rem 0}.stamp{color:#666;font-size:.9em}"
-        "a{color:#0645ad}</style></head><body>"
+        f"<title>{html.escape(title)}</title><style>{CSS}</style></head><body>"
         f"<h1>{html.escape(title)}</h1>{body}"
         f'<p class="stamp">{stamp}</p>'
         '<p class="stamp">Dados da ANVISA (API Consultas Externas), reproduzidos sem alteração. '
@@ -129,48 +122,50 @@ def page(title: str, body: str, *, stamp: str) -> str:
 def build_site(
     snapshots: Path, site: Path, *, base_url: str, base_tag: str, days: int = 30
 ) -> dict:
-    """Write site/index.html, site/fila/<id>.xml and site/fila/<id>.html. Returns counts."""
-    all_days = snapshot_days(snapshots)
-    if not all_days:
+    """Write site/index.html, site/feed.xsl, site/fila/<id>.xml and site/fila/<id>.html."""
+    window = snapshot_days(snapshots)[-(days + 1) :]
+    if not window:
         raise SystemExit("no snapshots to build from")
-    window = all_days[-(days + 1) :]
-    loaded = {d: load_snapshot(snapshots, d) for d in window}
     catalog = load_catalog(snapshots)
-    latest = window[-1]
-    meta = load_meta(snapshots, latest)
-    stamp = (
-        f"Última coleta bem-sucedida: {meta['finished'][:16].replace('T', ' ')} "
-        "(horário de Brasília), "
-        f"{meta['subfilas_crawled']} de {meta['subfilas_total']} subfilas, {meta['rows']} processos"
-        + (f", {len(meta['failed'])} subfilas falharam" if meta["failed"] else "")
-        + "."
-    )
+    metas = {d: load_meta(snapshots, d) for d in window}
     base_url = base_url.rstrip("/")
     (site / "fila").mkdir(parents=True, exist_ok=True)
     (site / "feed.xsl").write_text(FEED_XSL, encoding="utf-8")
 
-    # events per subfila per day, from consecutive snapshots inside the window
-    per_sub: dict[int, list[tuple[date, list[dict], list[dict]]]] = {}
-    for prev_day, day in zip(window, window[1:], strict=False):
-        for sub, events in diff_snapshots(loaded[prev_day], loaded[day]).items():
-            per_sub.setdefault(sub, []).append((day, events, loaded[day][sub]))
-    for sub, queue in loaded[latest].items():  # subfilas seen only on the latest day
-        per_sub.setdefault(sub, [(latest, [], queue)])
+    # rolling pair of days: events per subfila per day, oldest first; only the latest queues kept
+    history: dict[int, list[tuple[date, list[dict]]]] = {}
+    prev: dict[int, list[dict]] | None = None
+    for day in window:
+        curr = load_snapshot(snapshots, day)
+        if prev is not None:
+            for sub, events in diff_snapshots(prev, curr).items():
+                history.setdefault(sub, []).append((day, events))
+        prev = curr
+    latest_day, latest = window[-1], prev or {}
+    for sub in latest:
+        history.setdefault(sub, [(latest_day, [])])  # seen only on the latest day
 
-    feeds = 0
-    for sub, history in per_sub.items():
-        info = catalog["subfilas"].get(str(sub), {})
-        name = info.get("descricao") or f"subfila {sub}"
-        grupo = catalog["grupos"].get(str(info.get("grupo")), {}).get("descricao", "")
-        area = catalog["areas"].get(str(info.get("area")), "")
-        title = f"{name} · {grupo} · {area}".strip(" ·")
+    meta = metas[latest_day]
+    finished = datetime.fromisoformat(meta["finished"]).strftime("%Y-%m-%d %H:%M")
+    stamp = (
+        f"Última coleta bem-sucedida: {finished} (horário de Brasília), "
+        f"{meta['subfilas_crawled']} de {meta['subfilas_total']} subfilas, {meta['rows']} processos"
+        + (f", {len(meta['failed'])} subfilas falharam" if meta["failed"] else "")
+        + "."
+    )
+
+    for sub, days_events in history.items():
+        name, grupo, area = describe(catalog, sub)
+        title = f"{name} · {grupo} · {area}"
+        newest_day = days_events[-1][0]
         entries = []
-        for day, events, queue in sorted(history, key=lambda h: h[0], reverse=True):
+        for day, events in reversed(days_events):
+            queue = latest.get(sub) if day == newest_day else None  # full queue only once
             entries.append(
                 {
                     "id": tag_uri(base_tag, "fila", str(sub), day.isoformat()),
                     "title": f"{day.isoformat()}: {summary(events)}",
-                    "updated": iso(day),
+                    "updated": metas[day]["finished"],
                     "link": f"{base_url}/fila/{sub}.html",
                     "content": events_html(events, queue),
                 }
@@ -185,40 +180,34 @@ def build_site(
                 entries=entries,
             )
         )
-        latest_day, latest_events, latest_queue = max(history, key=lambda h: h[0])
         body = (
             f'<p><a href="{sub}.xml">Feed Atom</a> (cole o endereço no seu leitor de feeds) · '
             '<a href="../index.html">todas as filas</a></p>'
-            f"<h2>{latest_day.isoformat()}</h2>" + events_html(latest_events, latest_queue)
+            f"<h2>{newest_day.isoformat()}</h2>" + entries[0]["content"]
         )
         (site / "fila" / f"{sub}.html").write_text(page(title, body, stamp=stamp), encoding="utf-8")
-        feeds += 1
 
     # index: área → grupo → subfila
+    by_area: dict[str, dict[str, list[tuple[str, int]]]] = {}
+    for sub in history:
+        name, grupo, area = describe(catalog, sub)
+        by_area.setdefault(area, {}).setdefault(grupo, []).append((name, sub))
     lines = [
         "<p>Snapshots diários da fila de análise da ANVISA, um feed por subfila. "
-        f"{len(per_sub)} filas.</p>"
+        f"{len(history)} filas.</p>"
     ]
-    by_area: dict[str, dict[str, list[tuple[int, str]]]] = {}
-    for sub in per_sub:
-        info = catalog["subfilas"].get(str(sub), {})
-        area = catalog["areas"].get(str(info.get("area")), "?")
-        grupo = catalog["grupos"].get(str(info.get("grupo")), {}).get("descricao", "?")
-        by_area.setdefault(area, {}).setdefault(grupo, []).append(
-            (sub, info.get("descricao") or str(sub))
-        )
     for area in sorted(by_area):
         lines.append(f"<h2>{html.escape(area)}</h2>")
         for grupo in sorted(by_area[area]):
             lines.append(f"<h3>{html.escape(grupo)}</h3><ul>")
-            for sub, name in sorted(by_area[area][grupo], key=lambda x: x[1]):
-                n = len(loaded[latest].get(sub, []))
+            for name, sub in sorted(by_area[area][grupo]):
                 lines.append(
-                    f'<li><a href="fila/{sub}.html">{html.escape(name)}</a> ({n}) '
+                    f'<li><a href="fila/{sub}.html">{html.escape(name)}</a> '
+                    f"({len(latest.get(sub, []))}) "
                     f'<a href="fila/{sub}.xml">feed</a></li>'
                 )
             lines.append("</ul>")
     (site / "index.html").write_text(
         page("Filas de análise da ANVISA", "".join(lines), stamp=stamp), encoding="utf-8"
     )
-    return {"feeds": feeds, "days": len(window), "latest": latest.isoformat()}
+    return {"feeds": len(history), "days": len(window), "latest": latest_day.isoformat()}

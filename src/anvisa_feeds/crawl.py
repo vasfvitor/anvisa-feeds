@@ -3,11 +3,13 @@
 Snapshot layout under the snapshots directory:
 
     catalog.json            names of every área, grupo and subfila seen (refreshed each crawl)
-    YYYY-MM-DD.jsonl.gz     one row per queued process, every subfila crawled that day
+    YYYY-MM-DD.jsonl.gz     one line per crawled subfila: {subfila, area, grupo, rows: [...]}
     YYYY-MM-DD.meta.json    request count, timings, subfilas crawled / failed
 
-One request per catalog level plus one per subfila; the client's throttle keeps it at the
-gateway's refill rate (1 request/s, bucket shared per source address).
+A subfila with an empty `rows` was crawled and has nothing queued; a subfila absent from the
+file was not crawled that day. One request per catalog level plus one per subfila; the
+client's throttle keeps it at the gateway's refill rate (1 request/s, bucket shared per
+source address).
 """
 
 from __future__ import annotations
@@ -19,7 +21,7 @@ from datetime import date, datetime
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
-from anvisa import AnvisaError, Client, NotFoundError
+from anvisa import AnvisaError, Client
 
 BRT = ZoneInfo("America/Sao_Paulo")
 
@@ -32,12 +34,13 @@ def today() -> date:
     return now().date()
 
 
-def row_dict(row, *, area: int, grupo: int, subfila: int) -> dict:
+def dump_json(path: Path, data, **kwargs) -> None:
+    path.write_text(json.dumps(data, ensure_ascii=False, **kwargs) + "\n", encoding="utf-8")
+
+
+def row_dict(row) -> dict:
     entrada = row.dtEntrada.astimezone(BRT).date().isoformat() if row.dtEntrada else None
     return {
-        "area": area,
-        "grupo": grupo,
-        "subfila": subfila,
         "posicao": row.nuOrdem,
         "processo": row.numeroProcessoFormatado,
         "nuProcesso": row.nuProcesso,
@@ -48,13 +51,18 @@ def row_dict(row, *, area: int, grupo: int, subfila: int) -> dict:
     }
 
 
+def write_snapshot(out: Path, day: date, queues: Iterable[dict]) -> None:
+    with gzip.open(out / f"{day.isoformat()}.jsonl.gz", "wt", encoding="utf-8") as fh:
+        for queue in queues:
+            fh.write(json.dumps(queue, ensure_ascii=False) + "\n")
+
+
 def crawl(
     client: Client,
     out: Path,
     *,
     day: date | None = None,
     areas: Iterable[int] | None = None,
-    limit: int | None = None,
     log: Callable[[str], None] = print,
 ) -> dict:
     """Crawl and write the day's files. Returns the meta dict. A failed subfila is recorded in
@@ -63,70 +71,54 @@ def crawl(
     wanted = set(areas) if areas else None
     out.mkdir(parents=True, exist_ok=True)
     started = now()
-    requests = 0
     catalog: dict[str, dict] = {"areas": {}, "grupos": {}, "subfilas": {}}
-    rows: list[dict] = []
-    crawled: list[int] = []
+    queues: list[dict] = []
     failed: list[dict] = []
 
     for area in client.fila.areas():
         if wanted and area.id not in wanted:
             continue
         catalog["areas"][str(area.id)] = area.descricao
-        grupos = client.fila.grupos(area.id)
-        requests += 1
-        for grupo in grupos:
+        for grupo in client.fila.grupos(area.id):
             catalog["grupos"][str(grupo.id)] = {"descricao": grupo.descricao, "area": area.id}
-            subfilas = client.fila.subfilas(grupo.id)
-            requests += 1
-            for sub in subfilas:
+            for sub in client.fila.subfilas(grupo.id):
                 catalog["subfilas"][str(sub.id)] = {
                     "descricao": sub.descricao,
                     "grupo": grupo.id,
                     "area": area.id,
                 }
-                if limit is not None and len(crawled) + len(failed) >= limit:
-                    continue
-                requests += 1
                 try:
-                    queue = client.fila.consulta(sub.id)
-                except NotFoundError:
-                    # a subfila with nothing queued answers an empty-bodied 404 (88 of 314 on
-                    # 2026-09-06); anvisa >= 0.3 returns [] itself, older versions raise
-                    queue = []
+                    rows = client.fila.consulta(sub.id)  # [] when nothing is queued
                 except AnvisaError as exc:
                     failed.append({"subfila": sub.id, "error": str(exc)})
                     log(f"subfila {sub.id}: {exc}")
                     continue
-                crawled.append(sub.id)
-                rows.extend(
-                    row_dict(r, area=area.id, grupo=grupo.id, subfila=sub.id) for r in queue
+                queues.append(
+                    {
+                        "subfila": sub.id,
+                        "area": area.id,
+                        "grupo": grupo.id,
+                        "rows": [row_dict(r) for r in rows],
+                    }
                 )
-                log(f"subfila {sub.id} ({sub.descricao}): {len(queue)} rows")
+                log(f"subfila {sub.id} ({sub.descricao}): {len(rows)} rows")
 
-    requests += 1  # the initial areas() call
     finished = now()
     meta = {
         "date": day.isoformat(),
         "started": started.isoformat(),
         "finished": finished.isoformat(),
         "seconds": round((finished - started).total_seconds()),
-        "requests": requests,
-        "rows": len(rows),
+        # areas, one grupos call per area, one subfilas call per grupo, one consulta per subfila
+        "requests": 1 + len(catalog["areas"]) + len(catalog["grupos"]) + len(queues) + len(failed),
+        "rows": sum(len(q["rows"]) for q in queues),
         "subfilas_total": len(catalog["subfilas"]),
-        "subfilas_crawled": len(crawled),
-        "crawled": crawled,
+        "subfilas_crawled": len(queues),
         "failed": failed,
     }
-    with gzip.open(out / f"{day.isoformat()}.jsonl.gz", "wt", encoding="utf-8") as fh:
-        for row in rows:
-            fh.write(json.dumps(row, ensure_ascii=False) + "\n")
-    (out / f"{day.isoformat()}.meta.json").write_text(
-        json.dumps(meta, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
-    )
-    (out / "catalog.json").write_text(
-        json.dumps(catalog, ensure_ascii=False, indent=2, sort_keys=True) + "\n", encoding="utf-8"
-    )
+    write_snapshot(out, day, queues)
+    dump_json(out / f"{day.isoformat()}.meta.json", meta, indent=2)
+    dump_json(out / "catalog.json", catalog, indent=2, sort_keys=True)
     return meta
 
 
@@ -136,17 +128,11 @@ def snapshot_days(snapshots: Path) -> list[date]:
 
 
 def load_snapshot(snapshots: Path, day: date) -> dict[int, list[dict]]:
-    """Rows of one day grouped by subfila id, in queue order. A crawled subfila with an empty
-    queue is present with an empty list (from meta), so "empty" and "not crawled" differ."""
-    crawled = load_meta(snapshots, day).get("crawled", [])
-    queues: dict[int, list[dict]] = {sub: [] for sub in crawled}
+    """Queues of one day by subfila id, rows in queue order. Crawled-and-empty subfilas are
+    present with an empty list; subfilas not crawled that day are absent."""
     with gzip.open(snapshots / f"{day.isoformat()}.jsonl.gz", "rt", encoding="utf-8") as fh:
-        for line in fh:
-            row = json.loads(line)
-            queues.setdefault(row["subfila"], []).append(row)
-    for queue in queues.values():
-        queue.sort(key=lambda r: r["posicao"] or 0)
-    return queues
+        queues = [json.loads(line) for line in fh]
+    return {q["subfila"]: sorted(q["rows"], key=lambda r: r["posicao"] or 0) for q in queues}
 
 
 def load_meta(snapshots: Path, day: date) -> dict:
@@ -158,3 +144,14 @@ def load_catalog(snapshots: Path) -> dict:
     if not path.exists():
         return {"areas": {}, "grupos": {}, "subfilas": {}}
     return json.loads(path.read_text(encoding="utf-8"))
+
+
+def describe(catalog: dict, sub: int) -> tuple[str, str, str]:
+    """(subfila name, grupo name, área name) for a subfila id, with readable fallbacks."""
+    info = catalog["subfilas"].get(str(sub), {})
+    grupo = catalog["grupos"].get(str(info.get("grupo")), {})
+    return (
+        info.get("descricao") or f"subfila {sub}",
+        grupo.get("descricao") or "?",
+        catalog["areas"].get(str(info.get("area"))) or "?",
+    )

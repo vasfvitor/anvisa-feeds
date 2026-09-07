@@ -40,6 +40,8 @@ jobs:
         with:
           python-version: "3.12"
       - run: uv sync --locked
+      - id: day
+        run: echo "day=$(TZ=America/Sao_Paulo date +%F)" >> "$GITHUB_OUTPUT"
       - name: Crawl
         env:
           ANVISA_CLIENT_ID: ${{ secrets.ANVISA_CLIENT_ID }}
@@ -48,8 +50,10 @@ jobs:
       - name: Keep the snapshot as an artifact (survives a failed push)
         uses: actions/upload-artifact@v7
         with:
-          name: snapshot
-          path: snapshots/
+          name: snapshot-${{ steps.day.outputs.day }}
+          path: |
+            snapshots/${{ steps.day.outputs.day }}.*
+            snapshots/catalog.json
           retention-days: 90
           if-no-files-found: error
       - name: Commit and push the snapshot
@@ -58,7 +62,7 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add snapshots
           if git diff --cached --quiet; then echo "nothing to commit"; exit 0; fi
-          git commit -m "snapshot $(TZ=America/Sao_Paulo date +%F)"
+          git commit -m "snapshot ${{ steps.day.outputs.day }}"
           # something may have landed on main during the crawl: rebase and retry, then fail loudly
           git push || (git pull --rebase origin main && git push) \
                    || (sleep 30 && git pull --rebase origin main && git push)

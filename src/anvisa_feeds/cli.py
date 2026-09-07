@@ -3,11 +3,11 @@
 from __future__ import annotations
 
 import json
-from datetime import date
+from datetime import datetime
 from pathlib import Path
 
 import typer
-from anvisa import AnvisaError, Client, CredentialsError
+from anvisa.cli import handle_errors, make_client
 
 from .crawl import crawl
 from .feeds import build_site
@@ -17,34 +17,23 @@ app = typer.Typer(
 )
 
 
-def make_client() -> Client:
-    return Client.from_env()
-
-
 @app.command("crawl")
 def crawl_cmd(
     snapshots: Path = typer.Option(Path("snapshots"), help="where snapshots are written"),
     area: list[int] = typer.Option([], help="only these área ids (repeatable); default all"),
-    limit: int | None = typer.Option(None, help="stop after this many subfilas (smoke tests)"),
-    day: str | None = typer.Option(None, help="YYYY-MM-DD; default today in Brasília"),
+    day: datetime | None = typer.Option(
+        None, formats=["%Y-%m-%d"], help="snapshot date; default today in Brasília"
+    ),
 ) -> None:
     """One request per catalog level plus one per subfila, throttled to the gateway's rate."""
-    try:
-        with make_client() as client:
-            meta = crawl(
-                client,
-                snapshots,
-                day=date.fromisoformat(day) if day else None,
-                areas=area or None,
-                limit=limit,
-                log=lambda s: typer.echo(s, err=True),
-            )
-    except CredentialsError as exc:
-        typer.echo(f"error: {exc}", err=True)
-        raise typer.Exit(2) from None
-    except AnvisaError as exc:
-        typer.echo(f"error: {exc}", err=True)
-        raise typer.Exit(1) from None
+    with handle_errors(), make_client() as client:
+        meta = crawl(
+            client,
+            snapshots,
+            day=day.date() if day else None,
+            areas=area or None,
+            log=lambda s: typer.echo(s, err=True),
+        )
     typer.echo(json.dumps(meta, ensure_ascii=False))
     if meta["subfilas_crawled"] == 0:
         raise typer.Exit(1)
@@ -54,12 +43,8 @@ def crawl_cmd(
 def build_cmd(
     snapshots: Path = typer.Option(Path("snapshots")),
     site: Path = typer.Option(Path("site")),
-    base_url: str = typer.Option(
-        "https://vasfvitor.github.io/anvisa-feeds", help="public URL of the site"
-    ),
-    base_tag: str = typer.Option(
-        "vasfvitor.github.io,2026:anvisa-feeds", help="tag URI authority for feed ids"
-    ),
+    base_url: str = typer.Option("https://vasfvitor.github.io/anvisa-feeds", help="site URL"),
+    base_tag: str = typer.Option("vasfvitor.github.io,2026:anvisa-feeds", help="tag URI authority"),
     days: int = typer.Option(30, help="how many days of history each feed carries"),
 ) -> None:
     """Render index.html plus one Atom feed and one page per subfila from the snapshots."""
