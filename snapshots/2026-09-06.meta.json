@@ -1,0 +1,592 @@
+{
+  "date": "2026-09-06",
+  "started": "2026-09-06T21:05:20.360197-03:00",
+  "finished": "2026-09-06T21:12:06.419246-03:00",
+  "seconds": 406,
+  "requests": 383,
+  "rows": 10390,
+  "subfilas_total": 314,
+  "subfilas_crawled": 226,
+  "crawled": [
+    804,
+    793,
+    794,
+    790,
+    789,
+    2381,
+    3383,
+    3063,
+    3808,
+    3807,
+    784,
+    768,
+    2602,
+    2603,
+    783,
+    782,
+    762,
+    802,
+    801,
+    1621,
+    941,
+    1246,
+    1154,
+    1245,
+    1156,
+    3283,
+    725,
+    1329,
+    1330,
+    167,
+    1742,
+    198,
+    1743,
+    164,
+    181,
+    183,
+    1723,
+    1147,
+    3143,
+    169,
+    186,
+    168,
+    1741,
+    187,
+    1722,
+    221,
+    161,
+    172,
+    170,
+    1962,
+    1963,
+    166,
+    173,
+    2441,
+    2442,
+    197,
+    195,
+    196,
+    191,
+    1982,
+    1261,
+    1281,
+    1262,
+    3344,
+    630,
+    640,
+    647,
+    543,
+    583,
+    648,
+    524,
+    581,
+    650,
+    541,
+    3443,
+    586,
+    622,
+    587,
+    635,
+    653,
+    522,
+    588,
+    2161,
+    1292,
+    1290,
+    4007,
+    1287,
+    3987,
+    1288,
+    1298,
+    1283,
+    1295,
+    1267,
+    1263,
+    3303,
+    548,
+    656,
+    592,
+    632,
+    545,
+    3463,
+    657,
+    598,
+    627,
+    599,
+    662,
+    4047,
+    3464,
+    600,
+    3563,
+    3567,
+    3564,
+    3565,
+    3566,
+    1188,
+    1151,
+    1142,
+    1152,
+    1141,
+    2421,
+    3407,
+    903,
+    902,
+    64,
+    901,
+    101,
+    66,
+    904,
+    905,
+    3083,
+    2621,
+    4067,
+    4089,
+    4087,
+    4090,
+    4088,
+    4187,
+    4147,
+    4091,
+    3049,
+    3050,
+    1143,
+    909,
+    908,
+    913,
+    914,
+    916,
+    4367,
+    920,
+    981,
+    962,
+    3405,
+    1041,
+    1042,
+    1003,
+    1004,
+    1005,
+    1006,
+    1011,
+    1012,
+    1062,
+    1163,
+    3523,
+    3046,
+    3603,
+    3584,
+    3604,
+    1021,
+    1022,
+    1023,
+    1025,
+    1001,
+    923,
+    4267,
+    924,
+    881,
+    824,
+    823,
+    825,
+    3403,
+    861,
+    5,
+    862,
+    7,
+    841,
+    84,
+    6,
+    821,
+    3483,
+    922,
+    822,
+    3707,
+    917,
+    919,
+    1007,
+    1155,
+    4247,
+    921,
+    3043,
+    1681,
+    4027,
+    1158,
+    1185,
+    502,
+    504,
+    505,
+    506,
+    390,
+    507,
+    508,
+    392,
+    2881,
+    2882,
+    2481,
+    1522,
+    345,
+    350,
+    1461,
+    2321,
+    2301,
+    344,
+    346,
+    1521,
+    341,
+    351,
+    481
+  ],
+  "failed": [
+    {
+      "subfila": 2609,
+      "error": "HTTP 404: /consultas-externas-api/api/v1/fila/consulta"
+    },
+    {
+      "subfila": 792,
+      "error": "HTTP 404: /consultas-externas-api/api/v1/fila/consulta"
+    },
+    {
+      "subfila": 791,
+      "error": "HTTP 404: /consultas-externas-api/api/v1/fila/consulta"
+    },
+    {
+      "subfila": 795,
+      "error": "HTTP 404: /consultas-externas-api/api/v1/fila/consulta"
+    },
+    {
+      "subfila": 2607,
+      "error": "HTTP 404: /consultas-externas-api/api/v1/fila/consulta"
+    },
+    {
+      "subfila": 3827,
+      "error": "HTTP 404: /consultas-externas-api/api/v1/fila/consulta"
+    },
+    {
+      "subfila": 3828,
+      "error": "HTTP 404: /consultas-externas-api/api/v1/fila/consulta"
+    },
+    {
+      "subfila": 3829,
+      "error": "HTTP 404: /consultas-externas-api/api/v1/fila/consulta"
+    },
+    {
+      "subfila": 2608,
+      "error": "HTTP 404: /consultas-externas-api/api/v1/fila/consulta"
+    },
+    {
+      "subfila": 2605,
+      "error": "HTTP 404: /consultas-externas-api/api/v1/fila/consulta"
+    },
+    {
+      "subfila": 2606,
+      "error": "HTTP 404: /consultas-externas-api/api/v1/fila/consulta"
+    },
+    {
+      "subfila": 2604,
+      "error": "HTTP 404: /consultas-externas-api/api/v1/fila/consulta"
+    },
+    {
+      "subfila": 3524,
+      "error": "HTTP 404: /consultas-externas-api/api/v1/fila/consulta"
+    },
+    {
+      "subfila": 761,
+      "error": "HTTP 404: /consultas-externas-api/api/v1/fila/consulta"
+    },
+    {
+      "subfila": 3543,
+      "error": "HTTP 404: /consultas-externas-api/api/v1/fila/consulta"
+    },
+    {
+      "subfila": 1201,
+      "error": "HTTP 404: /consultas-externas-api/api/v1/fila/consulta"
+    },
+    {
+      "subfila": 1148,
+      "error": "HTTP 404: /consultas-externas-api/api/v1/fila/consulta"
+    },
+    {
+      "subfila": 3144,
+      "error": "HTTP 404: /consultas-externas-api/api/v1/fila/consulta"
+    },
+    {
+      "subfila": 222,
+      "error": "HTTP 404: /consultas-externas-api/api/v1/fila/consulta"
+    },
+    {
+      "subfila": 223,
+      "error": "HTTP 404: /consultas-externas-api/api/v1/fila/consulta"
+    },
+    {
+      "subfila": 1721,
+      "error": "HTTP 404: /consultas-externas-api/api/v1/fila/consulta"
+    },
+    {
+      "subfila": 1983,
+      "error": "HTTP 404: /consultas-externas-api/api/v1/fila/consulta"
+    },
+    {
+      "subfila": 1984,
+      "error": "HTTP 404: /consultas-externas-api/api/v1/fila/consulta"
+    },
+    {
+      "subfila": 174,
+      "error": "HTTP 404: /consultas-externas-api/api/v1/fila/consulta"
+    },
+    {
+      "subfila": 1724,
+      "error": "HTTP 404: /consultas-externas-api/api/v1/fila/consulta"
+    },
+    {
+      "subfila": 193,
+      "error": "HTTP 404: /consultas-externas-api/api/v1/fila/consulta"
+    },
+    {
+      "subfila": 1149,
+      "error": "HTTP 404: /consultas-externas-api/api/v1/fila/consulta"
+    },
+    {
+      "subfila": 1981,
+      "error": "HTTP 404: /consultas-externas-api/api/v1/fila/consulta"
+    },
+    {
+      "subfila": 200,
+      "error": "HTTP 404: /consultas-externas-api/api/v1/fila/consulta"
+    },
+    {
+      "subfila": 2443,
+      "error": "HTTP 404: /consultas-externas-api/api/v1/fila/consulta"
+    },
+    {
+      "subfila": 1282,
+      "error": "HTTP 404: /consultas-externas-api/api/v1/fila/consulta"
+    },
+    {
+      "subfila": 2581,
+      "error": "HTTP 404: /consultas-externas-api/api/v1/fila/consulta"
+    },
+    {
+      "subfila": 3223,
+      "error": "HTTP 404: /consultas-externas-api/api/v1/fila/consulta"
+    },
+    {
+      "subfila": 2966,
+      "error": "HTTP 404: /consultas-externas-api/api/v1/fila/consulta"
+    },
+    {
+      "subfila": 631,
+      "error": "HTTP 404: /consultas-externas-api/api/v1/fila/consulta"
+    },
+    {
+      "subfila": 3444,
+      "error": "HTTP 404: /consultas-externas-api/api/v1/fila/consulta"
+    },
+    {
+      "subfila": 624,
+      "error": "HTTP 404: /consultas-externas-api/api/v1/fila/consulta"
+    },
+    {
+      "subfila": 641,
+      "error": "HTTP 404: /consultas-externas-api/api/v1/fila/consulta"
+    },
+    {
+      "subfila": 2167,
+      "error": "HTTP 404: /consultas-externas-api/api/v1/fila/consulta"
+    },
+    {
+      "subfila": 2168,
+      "error": "HTTP 404: /consultas-externas-api/api/v1/fila/consulta"
+    },
+    {
+      "subfila": 2166,
+      "error": "HTTP 404: /consultas-externas-api/api/v1/fila/consulta"
+    },
+    {
+      "subfila": 2169,
+      "error": "HTTP 404: /consultas-externas-api/api/v1/fila/consulta"
+    },
+    {
+      "subfila": 2165,
+      "error": "HTTP 404: /consultas-externas-api/api/v1/fila/consulta"
+    },
+    {
+      "subfila": 2170,
+      "error": "HTTP 404: /consultas-externas-api/api/v1/fila/consulta"
+    },
+    {
+      "subfila": 2181,
+      "error": "HTTP 404: /consultas-externas-api/api/v1/fila/consulta"
+    },
+    {
+      "subfila": 2182,
+      "error": "HTTP 404: /consultas-externas-api/api/v1/fila/consulta"
+    },
+    {
+      "subfila": 2162,
+      "error": "HTTP 404: /consultas-externas-api/api/v1/fila/consulta"
+    },
+    {
+      "subfila": 2164,
+      "error": "HTTP 404: /consultas-externas-api/api/v1/fila/consulta"
+    },
+    {
+      "subfila": 2171,
+      "error": "HTTP 404: /consultas-externas-api/api/v1/fila/consulta"
+    },
+    {
+      "subfila": 1286,
+      "error": "HTTP 404: /consultas-externas-api/api/v1/fila/consulta"
+    },
+    {
+      "subfila": 1289,
+      "error": "HTTP 404: /consultas-externas-api/api/v1/fila/consulta"
+    },
+    {
+      "subfila": 1291,
+      "error": "HTTP 404: /consultas-externas-api/api/v1/fila/consulta"
+    },
+    {
+      "subfila": 1266,
+      "error": "HTTP 404: /consultas-externas-api/api/v1/fila/consulta"
+    },
+    {
+      "subfila": 4008,
+      "error": "HTTP 404: /consultas-externas-api/api/v1/fila/consulta"
+    },
+    {
+      "subfila": 1296,
+      "error": "HTTP 404: /consultas-externas-api/api/v1/fila/consulta"
+    },
+    {
+      "subfila": 638,
+      "error": "HTTP 404: /consultas-externas-api/api/v1/fila/consulta"
+    },
+    {
+      "subfila": 629,
+      "error": "HTTP 404: /consultas-externas-api/api/v1/fila/consulta"
+    },
+    {
+      "subfila": 644,
+      "error": "HTTP 404: /consultas-externas-api/api/v1/fila/consulta"
+    },
+    {
+      "subfila": 1189,
+      "error": "HTTP 404: /consultas-externas-api/api/v1/fila/consulta"
+    },
+    {
+      "subfila": 2842,
+      "error": "HTTP 404: /consultas-externas-api/api/v1/fila/consulta"
+    },
+    {
+      "subfila": 2841,
+      "error": "HTTP 404: /consultas-externas-api/api/v1/fila/consulta"
+    },
+    {
+      "subfila": 906,
+      "error": "HTTP 404: /consultas-externas-api/api/v1/fila/consulta"
+    },
+    {
+      "subfila": 3047,
+      "error": "HTTP 404: /consultas-externas-api/api/v1/fila/consulta"
+    },
+    {
+      "subfila": 3048,
+      "error": "HTTP 404: /consultas-externas-api/api/v1/fila/consulta"
+    },
+    {
+      "subfila": 3503,
+      "error": "HTTP 404: /consultas-externas-api/api/v1/fila/consulta"
+    },
+    {
+      "subfila": 910,
+      "error": "HTTP 404: /consultas-externas-api/api/v1/fila/consulta"
+    },
+    {
+      "subfila": 21,
+      "error": "HTTP 404: /consultas-externas-api/api/v1/fila/consulta"
+    },
+    {
+      "subfila": 22,
+      "error": "HTTP 404: /consultas-externas-api/api/v1/fila/consulta"
+    },
+    {
+      "subfila": 915,
+      "error": "HTTP 404: /consultas-externas-api/api/v1/fila/consulta"
+    },
+    {
+      "subfila": 41,
+      "error": "HTTP 404: /consultas-externas-api/api/v1/fila/consulta"
+    },
+    {
+      "subfila": 961,
+      "error": "HTTP 404: /consultas-externas-api/api/v1/fila/consulta"
+    },
+    {
+      "subfila": 3404,
+      "error": "HTTP 404: /consultas-externas-api/api/v1/fila/consulta"
+    },
+    {
+      "subfila": 1061,
+      "error": "HTTP 404: /consultas-externas-api/api/v1/fila/consulta"
+    },
+    {
+      "subfila": 63,
+      "error": "HTTP 404: /consultas-externas-api/api/v1/fila/consulta"
+    },
+    {
+      "subfila": 103,
+      "error": "HTTP 404: /consultas-externas-api/api/v1/fila/consulta"
+    },
+    {
+      "subfila": 2,
+      "error": "HTTP 404: /consultas-externas-api/api/v1/fila/consulta"
+    },
+    {
+      "subfila": 102,
+      "error": "HTTP 404: /consultas-externas-api/api/v1/fila/consulta"
+    },
+    {
+      "subfila": 4,
+      "error": "HTTP 404: /consultas-externas-api/api/v1/fila/consulta"
+    },
+    {
+      "subfila": 82,
+      "error": "HTTP 404: /consultas-externas-api/api/v1/fila/consulta"
+    },
+    {
+      "subfila": 3,
+      "error": "HTTP 404: /consultas-externas-api/api/v1/fila/consulta"
+    },
+    {
+      "subfila": 3045,
+      "error": "HTTP 404: /consultas-externas-api/api/v1/fila/consulta"
+    },
+    {
+      "subfila": 86,
+      "error": "HTTP 404: /consultas-externas-api/api/v1/fila/consulta"
+    },
+    {
+      "subfila": 918,
+      "error": "HTTP 404: /consultas-externas-api/api/v1/fila/consulta"
+    },
+    {
+      "subfila": 3406,
+      "error": "HTTP 404: /consultas-externas-api/api/v1/fila/consulta"
+    },
+    {
+      "subfila": 1150,
+      "error": "HTTP 404: /consultas-externas-api/api/v1/fila/consulta"
+    },
+    {
+      "subfila": 3343,
+      "error": "HTTP 404: /consultas-externas-api/api/v1/fila/consulta"
+    },
+    {
+      "subfila": 1663,
+      "error": "HTTP 404: /consultas-externas-api/api/v1/fila/consulta"
+    },
+    {
+      "subfila": 503,
+      "error": "HTTP 404: /consultas-externas-api/api/v1/fila/consulta"
+    }
+  ]
+}

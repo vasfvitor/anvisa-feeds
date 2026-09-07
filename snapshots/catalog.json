@@ -1,0 +1,1817 @@
+{
+  "areas": {
+    "1": "Medicamento",
+    "10": "Derivados do Tabaco",
+    "11": "Portos, Aeroportos, Fronteiras e Recintos Alfandegados",
+    "12": "Dispositivos Médicos para Diagnóstico in Vitro",
+    "15": "Insumo Farmacêutico",
+    "2": "Cosmético",
+    "3": "Saneantes",
+    "6": "Alimento",
+    "7": "Empresas",
+    "8": "Dispositivos Médicos",
+    "9": "Toxicologia"
+  },
+  "grupos": {
+    "1": {
+      "area": 1,
+      "descricao": "REGISTRO"
+    },
+    "1121": {
+      "area": 7,
+      "descricao": "AUTORIZAÇÃO DE FUNCIONAMENTO (AFE) E AUTORIZAÇÃO ESPECIAL (AE) EM PAF E RECINTOS ALFANDEGADOS"
+    },
+    "1141": {
+      "area": 2,
+      "descricao": "Avaliação de Substâncias"
+    },
+    "1162": {
+      "area": 3,
+      "descricao": "Avaliação de Substâncias"
+    },
+    "1181": {
+      "area": 1,
+      "descricao": "PRODUTOS DE TERAPIA AVANÇADA - CBPF"
+    },
+    "121": {
+      "area": 8,
+      "descricao": "Pesquisa Clínica de Dispositivos Médicos"
+    },
+    "1241": {
+      "area": 11,
+      "descricao": "CBPA de Recintos Alfandegados"
+    },
+    "1261": {
+      "area": 15,
+      "descricao": "Mudança de CADIFA"
+    },
+    "1365": {
+      "area": 1,
+      "descricao": "PROCEDIMENTO OTIMIZADO DE ANÁLISE"
+    },
+    "21": {
+      "area": 1,
+      "descricao": "PÓS-REGISTRO"
+    },
+    "263": {
+      "area": 9,
+      "descricao": "Registro - Toxicologia"
+    },
+    "281": {
+      "area": 8,
+      "descricao": "Registros"
+    },
+    "282": {
+      "area": 12,
+      "descricao": "Registros"
+    },
+    "285": {
+      "area": 8,
+      "descricao": "Alterações"
+    },
+    "286": {
+      "area": 12,
+      "descricao": "Alterações"
+    },
+    "287": {
+      "area": 8,
+      "descricao": "Revalidações"
+    },
+    "288": {
+      "area": 12,
+      "descricao": "Retificações"
+    },
+    "289": {
+      "area": 12,
+      "descricao": "Revalidações"
+    },
+    "290": {
+      "area": 8,
+      "descricao": "Retificações"
+    },
+    "291": {
+      "area": 8,
+      "descricao": "Cancelamentos a pedido"
+    },
+    "292": {
+      "area": 12,
+      "descricao": "Cancelamentos a pedido"
+    },
+    "293": {
+      "area": 8,
+      "descricao": "Notificações"
+    },
+    "294": {
+      "area": 12,
+      "descricao": "Notificações"
+    },
+    "296": {
+      "area": 2,
+      "descricao": "REGISTROS"
+    },
+    "297": {
+      "area": 2,
+      "descricao": "PÓS-REGISTRO"
+    },
+    "341": {
+      "area": 9,
+      "descricao": "Pós-Registro - Toxicologia"
+    },
+    "361": {
+      "area": 3,
+      "descricao": "REGISTRO"
+    },
+    "362": {
+      "area": 3,
+      "descricao": "PÓS REGISTRO"
+    },
+    "381": {
+      "area": 7,
+      "descricao": "CBPF NACIONAL"
+    },
+    "402": {
+      "area": 7,
+      "descricao": "CBPF INTERNACIONAL"
+    },
+    "403": {
+      "area": 7,
+      "descricao": "RENOVAÇÃO CBPF NACIONAL"
+    },
+    "41": {
+      "area": 1,
+      "descricao": "PESQUISA CLÍNICA"
+    },
+    "422": {
+      "area": 7,
+      "descricao": "CBPDA"
+    },
+    "443": {
+      "area": 7,
+      "descricao": "BAIXA COMPLEXIDADE"
+    },
+    "444": {
+      "area": 7,
+      "descricao": "RENOVAÇÃO CBPF INTERNACIONAL"
+    },
+    "448": {
+      "area": 7,
+      "descricao": "RENOVAÇÃO CBPDA"
+    },
+    "462": {
+      "area": 7,
+      "descricao": "CBPF NACIONAL E INTERNACIONAL"
+    },
+    "463": {
+      "area": 7,
+      "descricao": "RENOVAÇÃO CBPF NACIONAL E INTERNACIONAL"
+    },
+    "501": {
+      "area": 6,
+      "descricao": "Pós-registro"
+    },
+    "521": {
+      "area": 6,
+      "descricao": "Renovação de Registro"
+    },
+    "522": {
+      "area": 6,
+      "descricao": "Avaliação"
+    },
+    "542": {
+      "area": 1,
+      "descricao": "ROTULAGEM E NOME COMERCIAL "
+    },
+    "561": {
+      "area": 1,
+      "descricao": "RENOVAÇÃO"
+    },
+    "601": {
+      "area": 1,
+      "descricao": "EQUIVALÊNCIA TERAPÊUTICA"
+    },
+    "61": {
+      "area": 6,
+      "descricao": "Registro"
+    },
+    "621": {
+      "area": 1,
+      "descricao": "PROTOCOLO DE SEGURANÇA E EFICÁCIA"
+    },
+    "642": {
+      "area": 15,
+      "descricao": "PÓS REGISTRO DE IFA"
+    },
+    "661": {
+      "area": 8,
+      "descricao": "Transferências de Titularidade"
+    },
+    "662": {
+      "area": 7,
+      "descricao": "AUTORIZAÇÃO DE FUNCIONAMENTO (AFE) E AUTORIZAÇÃO ESPECIAL (AE)"
+    },
+    "663": {
+      "area": 7,
+      "descricao": "PRODUTOS CONTROLADOS"
+    },
+    "681": {
+      "area": 12,
+      "descricao": "Transferências de Titularidade"
+    },
+    "701": {
+      "area": 10,
+      "descricao": "REGISTRO"
+    },
+    "702": {
+      "area": 10,
+      "descricao": "RENOVAÇÃO"
+    },
+    "941": {
+      "area": 7,
+      "descricao": "HABILITAÇÃO REBLAS"
+    },
+    "942": {
+      "area": 7,
+      "descricao": "CREDENCIAMENTO DE LABORATÓRIO ANALÍTICO"
+    },
+    "943": {
+      "area": 7,
+      "descricao": "LABORATÓRIO OFICIAL CREDENCIADOR"
+    },
+    "981": {
+      "area": 1,
+      "descricao": "NOTIFICADOS"
+    }
+  },
+  "subfilas": {
+    "1001": {
+      "area": 1,
+      "descricao": "Produtos Biológicos e Radiofármacos - Administrativo",
+      "grupo": 21
+    },
+    "1003": {
+      "area": 1,
+      "descricao": "Genéricos, Novos e Similares - Extensão de linha - Priorizados (RDC 1.001/2025)",
+      "grupo": 21
+    },
+    "1004": {
+      "area": 1,
+      "descricao": "Genéricos, Novos e Similares - Maior complexidade",
+      "grupo": 21
+    },
+    "1005": {
+      "area": 1,
+      "descricao": "Genéricos, Novos e Similares - Menor complexidade",
+      "grupo": 21
+    },
+    "1006": {
+      "area": 1,
+      "descricao": "Genéricos, Novos e Similares - Menor complexidade - Priorizados (RDC 1.001/2025)",
+      "grupo": 21
+    },
+    "1007": {
+      "area": 1,
+      "descricao": "Genéricos, Novos e Similares",
+      "grupo": 561
+    },
+    "101": {
+      "area": 1,
+      "descricao": "DEEC, Inclusão e Emenda ao Protocolo - Doenças raras (RDC 205/2017)",
+      "grupo": 41
+    },
+    "1011": {
+      "area": 1,
+      "descricao": "Novos - Segurança e Eficácia - Alterações e Inclusões",
+      "grupo": 21
+    },
+    "1012": {
+      "area": 1,
+      "descricao": "Novos - Segurança e Eficácia - Alterações e Inclusões - Priorizados (RDC 1.001/2025)",
+      "grupo": 21
+    },
+    "102": {
+      "area": 1,
+      "descricao": "Específicos - Doenças raras (RDC 205/2017)",
+      "grupo": 1
+    },
+    "1021": {
+      "area": 1,
+      "descricao": "Produtos Biológicos - Bula",
+      "grupo": 21
+    },
+    "1022": {
+      "area": 1,
+      "descricao": "Produtos Biológicos - Eficácia e Segurança",
+      "grupo": 21
+    },
+    "1023": {
+      "area": 1,
+      "descricao": "Produtos Biológicos - Menor complexidade",
+      "grupo": 21
+    },
+    "1025": {
+      "area": 1,
+      "descricao": "Produtos Biológicos - Tecnologia farmacêutica",
+      "grupo": 21
+    },
+    "103": {
+      "area": 1,
+      "descricao": "Dinamizados - Doenças raras (RDC 205/2017)",
+      "grupo": 1
+    },
+    "1041": {
+      "area": 1,
+      "descricao": "Genéricos, Novos e Similares - Administrativo",
+      "grupo": 21
+    },
+    "1042": {
+      "area": 1,
+      "descricao": "Genéricos, Novos e Similares - Extensão de linha",
+      "grupo": 21
+    },
+    "1061": {
+      "area": 1,
+      "descricao": "Genéricos, Novos e Similares - Maior complexidade - Priorizados (RDC 1.001/2025)",
+      "grupo": 21
+    },
+    "1062": {
+      "area": 1,
+      "descricao": "Novos - Segurança e Eficácia - Exclusões",
+      "grupo": 21
+    },
+    "1141": {
+      "area": 1,
+      "descricao": "Habilitação Inicial de Centro de Equivalência",
+      "grupo": 601
+    },
+    "1142": {
+      "area": 1,
+      "descricao": "Demais Petições de Centro de Equivalência Farmacêutica",
+      "grupo": 601
+    },
+    "1143": {
+      "area": 1,
+      "descricao": "Protocolo de Segurança e Eficácia",
+      "grupo": 621
+    },
+    "1147": {
+      "area": 8,
+      "descricao": "Alterações de Registros de Implementação Imediata de Equipamentos e Software",
+      "grupo": 285
+    },
+    "1148": {
+      "area": 8,
+      "descricao": "Alterações de Registros de Implementação Imediata de Materiais Implantáveis em Ortopedia",
+      "grupo": 285
+    },
+    "1149": {
+      "area": 12,
+      "descricao": "Alterações de Registros de Implementação Imediata de IVD",
+      "grupo": 286
+    },
+    "1150": {
+      "area": 1,
+      "descricao": "Radiofármacos",
+      "grupo": 561
+    },
+    "1151": {
+      "area": 1,
+      "descricao": "Certificação Primária Centro de Bioequivalência",
+      "grupo": 601
+    },
+    "1152": {
+      "area": 1,
+      "descricao": "Demais Petições de Certificação de Centro de Bioequivalência",
+      "grupo": 601
+    },
+    "1154": {
+      "area": 2,
+      "descricao": "Repelentes",
+      "grupo": 297
+    },
+    "1155": {
+      "area": 1,
+      "descricao": "Produtos Biológicos ",
+      "grupo": 561
+    },
+    "1156": {
+      "area": 2,
+      "descricao": "Geral",
+      "grupo": 296
+    },
+    "1158": {
+      "area": 3,
+      "descricao": "Revalidações",
+      "grupo": 362
+    },
+    "1163": {
+      "area": 1,
+      "descricao": "Novos - Segurança e Eficácia - Texto de Bula",
+      "grupo": 21
+    },
+    "1185": {
+      "area": 3,
+      "descricao": "Geral",
+      "grupo": 361
+    },
+    "1188": {
+      "area": 15,
+      "descricao": "Maior Complexidade",
+      "grupo": 642
+    },
+    "1189": {
+      "area": 15,
+      "descricao": "Menor Complexidade",
+      "grupo": 642
+    },
+    "1201": {
+      "area": 8,
+      "descricao": "Alterações de Registros de Implementação Imediata de Materiais",
+      "grupo": 285
+    },
+    "1245": {
+      "area": 2,
+      "descricao": "Revalidação*",
+      "grupo": 297
+    },
+    "1246": {
+      "area": 2,
+      "descricao": "Geral",
+      "grupo": 297
+    },
+    "1261": {
+      "area": 7,
+      "descricao": " Concessão - Farmácias e Drogarias (AFE/AE)",
+      "grupo": 662
+    },
+    "1262": {
+      "area": 7,
+      "descricao": "Concessão - demais empresas (AFE/AE)",
+      "grupo": 662
+    },
+    "1263": {
+      "area": 7,
+      "descricao": "Renovação de Cota de Importação",
+      "grupo": 663
+    },
+    "1266": {
+      "area": 7,
+      "descricao": "Desistência de Petição a pedido",
+      "grupo": 663
+    },
+    "1267": {
+      "area": 7,
+      "descricao": "Renovação de AEP - Autorização Especial Simplificada para estabelecimentos de ensino e pesquisa",
+      "grupo": 663
+    },
+    "1281": {
+      "area": 7,
+      "descricao": "Alteração - Farmácias e Drogarias (AFE/AE)",
+      "grupo": 662
+    },
+    "1282": {
+      "area": 7,
+      "descricao": "Alteração - demais empresas (AFE/AE)",
+      "grupo": 662
+    },
+    "1283": {
+      "area": 7,
+      "descricao": "Cota de Importação Inicial",
+      "grupo": 663
+    },
+    "1286": {
+      "area": 7,
+      "descricao": "AFEX - Autorização de Fabricação para fim Exclusivo de Exportação",
+      "grupo": 663
+    },
+    "1287": {
+      "area": 7,
+      "descricao": "AI - Autorização de Importação de Substância/Medicamento sujeita à Cota de Importação",
+      "grupo": 663
+    },
+    "1288": {
+      "area": 7,
+      "descricao": "AIP - Autorização de Importação de Substância/Medicamento -  ensino, pesquisa ou desenvolvimento",
+      "grupo": 663
+    },
+    "1289": {
+      "area": 7,
+      "descricao": "AIE - Autorização de Importação Específica de Substância/Medicamento",
+      "grupo": 663
+    },
+    "1290": {
+      "area": 7,
+      "descricao": "AEP - Autorização Especial Simplificada para estabelecimentos de ensino e pesquisa",
+      "grupo": 663
+    },
+    "1291": {
+      "area": 7,
+      "descricao": "AMC - Autorização para Aquisição de Medicamentos Sujeitos a Controle Especial",
+      "grupo": 663
+    },
+    "1292": {
+      "area": 7,
+      "descricao": "ADA - Autorização para fim de desembaraço aduaneiro",
+      "grupo": 663
+    },
+    "1295": {
+      "area": 7,
+      "descricao": "Devolução de documentos",
+      "grupo": 663
+    },
+    "1296": {
+      "area": 7,
+      "descricao": "Retificação de documentos",
+      "grupo": 663
+    },
+    "1298": {
+      "area": 7,
+      "descricao": "Cancelamento de Petição a pedido",
+      "grupo": 663
+    },
+    "1329": {
+      "area": 10,
+      "descricao": "REGISTRO",
+      "grupo": 701
+    },
+    "1330": {
+      "area": 10,
+      "descricao": "RENOVAÇÃO",
+      "grupo": 702
+    },
+    "1461": {
+      "area": 9,
+      "descricao": "5005/5088 - Preservativos de Madeira",
+      "grupo": 263
+    },
+    "1521": {
+      "area": 9,
+      "descricao": "5064 - Produto Fitossanitário com Uso Aprovado para Agricultura Orgânica",
+      "grupo": 263
+    },
+    "1522": {
+      "area": 9,
+      "descricao": "5002 - Produto Formulado",
+      "grupo": 263
+    },
+    "161": {
+      "area": 8,
+      "descricao": "Registros de Equipamentos",
+      "grupo": 281
+    },
+    "1621": {
+      "area": 2,
+      "descricao": "Alisantes / Ondulantes",
+      "grupo": 1141
+    },
+    "164": {
+      "area": 8,
+      "descricao": "Alterações de Registros de Aprovação Requerida de Equipamentos",
+      "grupo": 285
+    },
+    "166": {
+      "area": 8,
+      "descricao": "Revalidações de Registros de Equipamentos",
+      "grupo": 287
+    },
+    "1663": {
+      "area": 3,
+      "descricao": "Transf. de titularidade e cancelamentos",
+      "grupo": 362
+    },
+    "167": {
+      "area": 8,
+      "descricao": "Alterações de Notificações de Equipamentos Classe I",
+      "grupo": 285
+    },
+    "168": {
+      "area": 8,
+      "descricao": "Notificações de Equipamentos Classe I",
+      "grupo": 293
+    },
+    "1681": {
+      "area": 3,
+      "descricao": "Geral",
+      "grupo": 362
+    },
+    "169": {
+      "area": 8,
+      "descricao": "Cancelamentos a pedido de Equipamentos",
+      "grupo": 291
+    },
+    "170": {
+      "area": 8,
+      "descricao": "Registros de Materiais de Uso Médico",
+      "grupo": 281
+    },
+    "172": {
+      "area": 8,
+      "descricao": "Registros de Materiais Implantáveis em Ortopedia",
+      "grupo": 281
+    },
+    "1721": {
+      "area": 8,
+      "descricao": "Registros de Software",
+      "grupo": 281
+    },
+    "1722": {
+      "area": 8,
+      "descricao": "Notificações de Software",
+      "grupo": 293
+    },
+    "1723": {
+      "area": 8,
+      "descricao": "Alterações de Registros de Aprovação Requerida de Software",
+      "grupo": 285
+    },
+    "1724": {
+      "area": 8,
+      "descricao": "Revalidações de Registros de Software",
+      "grupo": 287
+    },
+    "173": {
+      "area": 8,
+      "descricao": "Revalidações de Registros de Materiais de Uso Médico",
+      "grupo": 287
+    },
+    "174": {
+      "area": 8,
+      "descricao": "Revalidações de Registros de Materiais Implantáveis em Ortopedia",
+      "grupo": 287
+    },
+    "1741": {
+      "area": 8,
+      "descricao": "Notificações de Equipamentos Classe II",
+      "grupo": 293
+    },
+    "1742": {
+      "area": 8,
+      "descricao": "Alterações de Notificações de Equipamentos Classe II",
+      "grupo": 285
+    },
+    "1743": {
+      "area": 8,
+      "descricao": "Alterações de Notificações de Software",
+      "grupo": 285
+    },
+    "181": {
+      "area": 8,
+      "descricao": "Alterações de Registros de Aprovação Requerida de Materiais",
+      "grupo": 285
+    },
+    "183": {
+      "area": 8,
+      "descricao": "Alterações de Registros de Aprovação Requerida de Materiais Implantáveis em Ortopedia",
+      "grupo": 285
+    },
+    "186": {
+      "area": 8,
+      "descricao": "Cancelamentos a pedido de Materiais de Uso Médico",
+      "grupo": 291
+    },
+    "187": {
+      "area": 8,
+      "descricao": "Notificações de Materiais de Uso Médico",
+      "grupo": 293
+    },
+    "191": {
+      "area": 12,
+      "descricao": "Registros de IVD",
+      "grupo": 282
+    },
+    "193": {
+      "area": 12,
+      "descricao": "Alterações de Registros de Aprovação Requerida de IVD",
+      "grupo": 286
+    },
+    "195": {
+      "area": 12,
+      "descricao": "Cancelamentos a pedido de IVD",
+      "grupo": 292
+    },
+    "196": {
+      "area": 12,
+      "descricao": "Notificações de IVD",
+      "grupo": 294
+    },
+    "1962": {
+      "area": 8,
+      "descricao": "Retificações de Materiais de Uso Médico - Anvisa",
+      "grupo": 290
+    },
+    "1963": {
+      "area": 8,
+      "descricao": "Retificações de Materiais de Uso Médico - Empresa",
+      "grupo": 290
+    },
+    "197": {
+      "area": 12,
+      "descricao": "Alterações de Notificações de IVD",
+      "grupo": 286
+    },
+    "198": {
+      "area": 8,
+      "descricao": "Alterações de Notificações de Materiais",
+      "grupo": 285
+    },
+    "1981": {
+      "area": 12,
+      "descricao": "Retificações de IVD - Anvisa",
+      "grupo": 288
+    },
+    "1982": {
+      "area": 12,
+      "descricao": "Retificações de IVD - Empresa",
+      "grupo": 288
+    },
+    "1983": {
+      "area": 8,
+      "descricao": "Retificações de Equipamentos - Anvisa",
+      "grupo": 290
+    },
+    "1984": {
+      "area": 8,
+      "descricao": "Retificações de Equipamentos - Empresa",
+      "grupo": 290
+    },
+    "2": {
+      "area": 1,
+      "descricao": "Dinamizados - Priorizados (RDC 1.001/2025)",
+      "grupo": 1
+    },
+    "200": {
+      "area": 12,
+      "descricao": "Revalidações de Registros de IVD",
+      "grupo": 289
+    },
+    "21": {
+      "area": 1,
+      "descricao": "Dinamizados - Menor Complexidade - Priorizados (RDC 1.001/2025)",
+      "grupo": 21
+    },
+    "2161": {
+      "area": 7,
+      "descricao": "Solicitação de habilitação inicial de laboratório analítico",
+      "grupo": 941
+    },
+    "2162": {
+      "area": 7,
+      "descricao": "Renovação de habilitação de laboratório analítico",
+      "grupo": 941
+    },
+    "2164": {
+      "area": 7,
+      "descricao": "Retificação de publicação no D.O.U.",
+      "grupo": 941
+    },
+    "2165": {
+      "area": 7,
+      "descricao": "Solicitação de credenciamento inicial de laboratório analítico",
+      "grupo": 942
+    },
+    "2166": {
+      "area": 7,
+      "descricao": "Renovação de credenciamento de laboratório analítico",
+      "grupo": 942
+    },
+    "2167": {
+      "area": 7,
+      "descricao": "Alteração de escopo de credenciamento de laboratório analítico",
+      "grupo": 942
+    },
+    "2168": {
+      "area": 7,
+      "descricao": "Cancelamento de credenciamento de laboratório analítico",
+      "grupo": 942
+    },
+    "2169": {
+      "area": 7,
+      "descricao": "Retificação de publicação no D.O.U.",
+      "grupo": 942
+    },
+    "2170": {
+      "area": 7,
+      "descricao": "Solicitação de priorização de análise de credenciamento",
+      "grupo": 942
+    },
+    "2171": {
+      "area": 7,
+      "descricao": "Solicitação de designação como laboratório oficial credenciador",
+      "grupo": 943
+    },
+    "2181": {
+      "area": 7,
+      "descricao": "Alteração de escopo de habilitação de laboratório analítico",
+      "grupo": 941
+    },
+    "2182": {
+      "area": 7,
+      "descricao": "Cancelamento de habilitação de laboratório analítico",
+      "grupo": 941
+    },
+    "22": {
+      "area": 1,
+      "descricao": "Específicos - Maior complexidade - Priorizados (RDC 1.001/2025)",
+      "grupo": 21
+    },
+    "221": {
+      "area": 8,
+      "descricao": "Dossiês de Investigação Clínica de Dispositivos",
+      "grupo": 121
+    },
+    "222": {
+      "area": 8,
+      "descricao": "Emendas/Modificações Substanciais",
+      "grupo": 121
+    },
+    "223": {
+      "area": 8,
+      "descricao": "Notificações",
+      "grupo": 121
+    },
+    "2301": {
+      "area": 9,
+      "descricao": "5022 - REX (Registro para Exportação)",
+      "grupo": 263
+    },
+    "2321": {
+      "area": 9,
+      "descricao": "5016/5085 - Produto Formulado Químico de uso não agrícola",
+      "grupo": 263
+    },
+    "2381": {
+      "area": 6,
+      "descricao": "AVALIAÇÃO SIMPLIFICADA DE NOVOS ALIMENTOS E NOVOS INGREDIENTES",
+      "grupo": 522
+    },
+    "2421": {
+      "area": 1,
+      "descricao": "Atualização LMN",
+      "grupo": 981
+    },
+    "2441": {
+      "area": 8,
+      "descricao": "Transferências de Titularidade de Equipamentos",
+      "grupo": 661
+    },
+    "2442": {
+      "area": 8,
+      "descricao": "Transferências de Titularidade de Materiais de Uso Médico",
+      "grupo": 661
+    },
+    "2443": {
+      "area": 12,
+      "descricao": "Transferências de Titularidade de IVD",
+      "grupo": 681
+    },
+    "2481": {
+      "area": 9,
+      "descricao": "Cópia de processo",
+      "grupo": 341
+    },
+    "2581": {
+      "area": 7,
+      "descricao": "Certificados",
+      "grupo": 662
+    },
+    "2602": {
+      "area": 6,
+      "descricao": "ALTERAÇÕES DE CADASTRO",
+      "grupo": 501
+    },
+    "2603": {
+      "area": 6,
+      "descricao": "CANCELAMENTO",
+      "grupo": 501
+    },
+    "2604": {
+      "area": 6,
+      "descricao": "TRANSFERÊNCIA DE TITULARIDADE",
+      "grupo": 501
+    },
+    "2605": {
+      "area": 6,
+      "descricao": "DESISTÊNCIA",
+      "grupo": 501
+    },
+    "2606": {
+      "area": 6,
+      "descricao": "RETIFICAÇÃO",
+      "grupo": 501
+    },
+    "2607": {
+      "area": 6,
+      "descricao": "DESISTÊNCIA",
+      "grupo": 522
+    },
+    "2608": {
+      "area": 6,
+      "descricao": "RETIFICAÇÃO",
+      "grupo": 522
+    },
+    "2609": {
+      "area": 6,
+      "descricao": "AVALIAÇÃO ADITIVOS ALIMENTARES OU COADJUVANTES DE TECNOLOGIA COM PARECER FAVORÁVEL DA ANVISA E MAPA",
+      "grupo": 522
+    },
+    "2621": {
+      "area": 1,
+      "descricao": "Procedimento Otimizado de Análise - Reliance",
+      "grupo": 41
+    },
+    "2841": {
+      "area": 1,
+      "descricao": "Notificação de Radiofármacos",
+      "grupo": 981
+    },
+    "2842": {
+      "area": 1,
+      "descricao": "Alteração de Notificação de Radiofármacos",
+      "grupo": 981
+    },
+    "2881": {
+      "area": 9,
+      "descricao": "5137 - Avaliação Toxicológica simplificada de Pós-Registro de agrotóxicos de origem biológica",
+      "grupo": 341
+    },
+    "2882": {
+      "area": 9,
+      "descricao": "5138 - Avaliação Toxicológica para pós-Registro de agrotóxicos de origem biológica",
+      "grupo": 341
+    },
+    "2966": {
+      "area": 7,
+      "descricao": "Concessão AFE/AE e Cadastro de filial – Prestador de serviço de armazenagem em PAF (RDC 346/02)",
+      "grupo": 1121
+    },
+    "3": {
+      "area": 1,
+      "descricao": "Fitoterápicos - Priorizados (RDC 1.001/2025)",
+      "grupo": 1
+    },
+    "3043": {
+      "area": 3,
+      "descricao": "Inclusão/Autorização de Monografia",
+      "grupo": 1162
+    },
+    "3045": {
+      "area": 1,
+      "descricao": "PRODUTOS DE TERAPIA AVANÇADA",
+      "grupo": 1
+    },
+    "3046": {
+      "area": 1,
+      "descricao": "PRODUTOS DE TERAPIA AVANÇADA",
+      "grupo": 21
+    },
+    "3047": {
+      "area": 1,
+      "descricao": "PRODUTOS DE TERAPIA AVANÇADA - Ensaio Clínico Classe I",
+      "grupo": 41
+    },
+    "3048": {
+      "area": 1,
+      "descricao": "PRODUTOS DE TERAPIA AVANÇADA - Ensaio Clínico Classe II",
+      "grupo": 41
+    },
+    "3049": {
+      "area": 1,
+      "descricao": "CBPF - Nacional e Internacional",
+      "grupo": 1181
+    },
+    "3050": {
+      "area": 1,
+      "descricao": "CBPF RENOVAÇÃO - Nacional e Internacional",
+      "grupo": 1181
+    },
+    "3063": {
+      "area": 6,
+      "descricao": "DOCUMENTAÇÃO EMITIDA POR AREE COMO REFERÊNCIA ÚNICA - ADITIVOS E COADJUVANTES, EXCETO ENZIMAS",
+      "grupo": 522
+    },
+    "3083": {
+      "area": 1,
+      "descricao": "PRODUTOS DE TERAPIA AVANÇADA - Emendas/Modificações",
+      "grupo": 41
+    },
+    "3143": {
+      "area": 8,
+      "descricao": "Reenquadramentos de Notificação para Registro de Materiais conforme RDC nº 751",
+      "grupo": 285
+    },
+    "3144": {
+      "area": 8,
+      "descricao": "Reenquadramentos de Notificação para Registro de Equipamentos conforme RDC nº 751",
+      "grupo": 285
+    },
+    "3223": {
+      "area": 7,
+      "descricao": "Pedidos de operação societária da RDC 102/2016",
+      "grupo": 662
+    },
+    "3283": {
+      "area": 2,
+      "descricao": "Pomadas",
+      "grupo": 296
+    },
+    "3303": {
+      "area": 7,
+      "descricao": "Solicitação de autorização de embarque de produtos sujeitos a controle especial",
+      "grupo": 663
+    },
+    "3343": {
+      "area": 11,
+      "descricao": "Certificação de BPA de Recintos Alfandegados",
+      "grupo": 1241
+    },
+    "3344": {
+      "area": 7,
+      "descricao": "Demais petições relacionadas a AFE/AE em PAF ",
+      "grupo": 1121
+    },
+    "3383": {
+      "area": 6,
+      "descricao": "CONSULTA SOBRE A CLASSIFICAÇÃO DE UM NOVO ALIMENTO E NOVO INGREDIENTE",
+      "grupo": 522
+    },
+    "3403": {
+      "area": 1,
+      "descricao": "Gases Medicinais",
+      "grupo": 1
+    },
+    "3404": {
+      "area": 1,
+      "descricao": "Gases Medicinais - Maior complexidade",
+      "grupo": 21
+    },
+    "3405": {
+      "area": 1,
+      "descricao": "Gases Medicinais - Menor complexidade",
+      "grupo": 21
+    },
+    "3406": {
+      "area": 1,
+      "descricao": "Gases Medicinais",
+      "grupo": 561
+    },
+    "3407": {
+      "area": 1,
+      "descricao": "Atualização da lista de gases medicinais sujeitos à notificação",
+      "grupo": 981
+    },
+    "341": {
+      "area": 9,
+      "descricao": "5065 - Produto Formulado com Base em Produto Técnico Equivalente",
+      "grupo": 263
+    },
+    "344": {
+      "area": 9,
+      "descricao": "5041 - Produto Técnico Equivalente - Fase II e III",
+      "grupo": 263
+    },
+    "3443": {
+      "area": 7,
+      "descricao": "CBPF INTERNACIONAL DE PRODUTOS BIOLÓGICOS",
+      "grupo": 402
+    },
+    "3444": {
+      "area": 7,
+      "descricao": "CBPF NACIONAL DE PRODUTOS BIOLÓGICOS",
+      "grupo": 381
+    },
+    "345": {
+      "area": 9,
+      "descricao": "5003/5020 - Produto Técnico",
+      "grupo": 263
+    },
+    "346": {
+      "area": 9,
+      "descricao": "5061 - Pré-Mistura",
+      "grupo": 263
+    },
+    "3463": {
+      "area": 7,
+      "descricao": "RENOVAÇÃO CBPF INTERNACIONAL DE PRODUTOS BIOLÓGICOS",
+      "grupo": 444
+    },
+    "3464": {
+      "area": 7,
+      "descricao": "RENOVAÇÃO DE CBPF NACIONAL DE PRODUTOS BIOLÓGICOS",
+      "grupo": 403
+    },
+    "3483": {
+      "area": 1,
+      "descricao": "Produtos Biológicos - Priorizados",
+      "grupo": 1
+    },
+    "350": {
+      "area": 9,
+      "descricao": "5004 - RET (Registro Especial Temporário)",
+      "grupo": 263
+    },
+    "3503": {
+      "area": 1,
+      "descricao": "PRODUTOS DE TERAPIA AVANÇADA - Programas Assistenciais",
+      "grupo": 41
+    },
+    "351": {
+      "area": 9,
+      "descricao": "5081/5082/5083/5084/5086/5087/5089/5090/5141 - Biológicos via convencional",
+      "grupo": 263
+    },
+    "3523": {
+      "area": 1,
+      "descricao": "PGMP",
+      "grupo": 21
+    },
+    "3524": {
+      "area": 6,
+      "descricao": "FÓRMULA DIETOTERÁPICA PARA ERROS INATOS DO METABOLISMO",
+      "grupo": 61
+    },
+    "3543": {
+      "area": 6,
+      "descricao": "FÓRMULA DIETOTERÁPICA PARA ERROS INATOS DO METABOLISMO",
+      "grupo": 521
+    },
+    "3563": {
+      "area": 15,
+      "descricao": "Mudanças Administrativas",
+      "grupo": 1261
+    },
+    "3564": {
+      "area": 15,
+      "descricao": "Mudanças de qualidade - maior complexidade",
+      "grupo": 1261
+    },
+    "3565": {
+      "area": 15,
+      "descricao": "Mudanças de qualidade - menor complexidade",
+      "grupo": 1261
+    },
+    "3566": {
+      "area": 15,
+      "descricao": "Outras petições administrativas",
+      "grupo": 1261
+    },
+    "3567": {
+      "area": 15,
+      "descricao": "Mudanças de qualidade - implementação imediata",
+      "grupo": 1261
+    },
+    "3584": {
+      "area": 1,
+      "descricao": "Produto biológico-Tecnologia farmacêutica-Priorizados",
+      "grupo": 21
+    },
+    "3603": {
+      "area": 1,
+      "descricao": "Produto biológico-Menor complexidade-Priorizados",
+      "grupo": 21
+    },
+    "3604": {
+      "area": 1,
+      "descricao": "Produto biológioco-Eficácia e Segurança-Priorizados",
+      "grupo": 21
+    },
+    "3707": {
+      "area": 1,
+      "descricao": "Clones - Genéricos e Similares",
+      "grupo": 561
+    },
+    "3807": {
+      "area": 6,
+      "descricao": "DOCUMENTAÇÃO EMITIDA POR AREE COMO REFERÊNCIA ÚNICA - NOVOS ALIMENTOS E NOVOS INGREDIENTES",
+      "grupo": 522
+    },
+    "3808": {
+      "area": 6,
+      "descricao": "DOCUMENTAÇÃO EMITIDA POR AREE COMO REFERÊNCIA ÚNICA - ENZIMAS COMO COADJUVANTES DE TECNOLOGIA",
+      "grupo": 522
+    },
+    "3827": {
+      "area": 6,
+      "descricao": "DOCUMENTAÇÃO EMITIDA POR AREE COMO REFERÊNCIA ÚNICA - MATERIAIS EM CONTATO COM ALIMENTOS",
+      "grupo": 522
+    },
+    "3828": {
+      "area": 6,
+      "descricao": "DOCUMENTAÇÃO EMITIDA POR AREE COMO REFERÊNCIA ÚNICA - PROBIÓTICOS E ENZIMAS COMO INGREDIENTES",
+      "grupo": 522
+    },
+    "3829": {
+      "area": 6,
+      "descricao": "DOCUMENTAÇÃO EMITIDA POR AREE COMO REFERÊNCIA ÚNICA - PRODUTOS DE USO VETERINÁRIO",
+      "grupo": 522
+    },
+    "390": {
+      "area": 9,
+      "descricao": "5046 - Avaliação Toxicológica para Alteração de Frequência de Aplicação",
+      "grupo": 341
+    },
+    "392": {
+      "area": 9,
+      "descricao": "5078 - Avaliação Toxicológica para Inclusão de CSFI",
+      "grupo": 341
+    },
+    "3987": {
+      "area": 7,
+      "descricao": "AI - Autorização de Importação para a produção, importação e distribuição de padrões analíticos",
+      "grupo": 663
+    },
+    "4": {
+      "area": 1,
+      "descricao": "Específicos - Priorizados (RDC 1.001/2025)",
+      "grupo": 1
+    },
+    "4007": {
+      "area": 7,
+      "descricao": "AI - Autorização de Importação de Substância/Medicamento da lista D1 isenta de cota de importação",
+      "grupo": 663
+    },
+    "4008": {
+      "area": 7,
+      "descricao": "Priorização Programa OEA-Integrado Anvisa (RDC N° 845/2024)",
+      "grupo": 663
+    },
+    "4027": {
+      "area": 3,
+      "descricao": "Outras petições",
+      "grupo": 362
+    },
+    "4047": {
+      "area": 7,
+      "descricao": "RENOVAÇÃO DE CBPF NACIONAL DE MEDICAMENTOS",
+      "grupo": 403
+    },
+    "4067": {
+      "area": 1,
+      "descricao": "PROCEDIMENTO OTIMIZADO DE ANÁLISE - CADIFA",
+      "grupo": 1365
+    },
+    "4087": {
+      "area": 1,
+      "descricao": "PROCEDIMENTO OTIMIZADO DE ANÁLISE - QUALIDADE",
+      "grupo": 1365
+    },
+    "4088": {
+      "area": 1,
+      "descricao": "PROCEDIMENTO OTIMIZADO DE ANÁLISE - SEGURANÇA E EFICÁCIA",
+      "grupo": 1365
+    },
+    "4089": {
+      "area": 1,
+      "descricao": "PROCEDIMENTO OTIMIZADO DE ANÁLISE - ESTUDO DE BIOEQUIVALÊNCIA",
+      "grupo": 1365
+    },
+    "4090": {
+      "area": 1,
+      "descricao": "PROCEDIMENTO OTIMIZADO DE ANÁLISE - QUALIFICAÇÃO DE IMPUREZAS",
+      "grupo": 1365
+    },
+    "4091": {
+      "area": 1,
+      "descricao": "PRODUTOS BIOLÓGICOS - REGISTRO (IN 289/24) ",
+      "grupo": 1365
+    },
+    "41": {
+      "area": 1,
+      "descricao": "Fitoterápicos - Maior complexidade - Priorizados (RDC 1.001/2025)",
+      "grupo": 21
+    },
+    "4147": {
+      "area": 1,
+      "descricao": "PRODUTOS BIOLÓGICOS - PÓS-REGISTRO SEG/EFICACIA (IN 289/2024)",
+      "grupo": 1365
+    },
+    "4187": {
+      "area": 1,
+      "descricao": "PRODUTOS BIOLÓGICOS - PÓS-REGISTRO CMC (IN 289/2024)",
+      "grupo": 1365
+    },
+    "4247": {
+      "area": 1,
+      "descricao": "Produtos de Cannabis",
+      "grupo": 561
+    },
+    "4267": {
+      "area": 1,
+      "descricao": "Produtos de Cannabis - Menor complexidade",
+      "grupo": 21
+    },
+    "4367": {
+      "area": 1,
+      "descricao": "Fitoterápicos - Adequação de bula e rotulagem à RDC nº 1.004/2025",
+      "grupo": 21
+    },
+    "481": {
+      "area": 9,
+      "descricao": "Produtos Simplificados - SIPTOX",
+      "grupo": 263
+    },
+    "5": {
+      "area": 1,
+      "descricao": "Genéricos e Similares - Priorizados (RDC 1.001/2025)",
+      "grupo": 1
+    },
+    "502": {
+      "area": 9,
+      "descricao": "5000 - Avaliação Toxicológica para Inclusão de Culturas",
+      "grupo": 341
+    },
+    "503": {
+      "area": 9,
+      "descricao": "5001 - Avaliação Toxicológica para Reclassificação Toxicológica",
+      "grupo": 341
+    },
+    "504": {
+      "area": 9,
+      "descricao": "5008 - Avaliação Toxicológica para Alteração de Formulação",
+      "grupo": 341
+    },
+    "505": {
+      "area": 9,
+      "descricao": "5021 - Avaliação Toxicológica para Alteração de Dose para Maior na Aplicação",
+      "grupo": 341
+    },
+    "506": {
+      "area": 9,
+      "descricao": "5044 - Avaliação Toxicológica para Alteração de Intervalo de Segurança",
+      "grupo": 341
+    },
+    "507": {
+      "area": 9,
+      "descricao": "5047 - Avaliação Toxicológica para Alteração de Modalidade de Aplicação",
+      "grupo": 341
+    },
+    "508": {
+      "area": 9,
+      "descricao": "5048 - Avaliação Toxicológica para Alteração de Produto Técnico em Produto Formulado",
+      "grupo": 341
+    },
+    "522": {
+      "area": 7,
+      "descricao": "CBPF NACIONAL DE MEDICAMENTOS ",
+      "grupo": 381
+    },
+    "524": {
+      "area": 7,
+      "descricao": "CBPDA DE MEDICAMENTOS ",
+      "grupo": 422
+    },
+    "541": {
+      "area": 7,
+      "descricao": "CBPF INTERNACIONAL DE MEDICAMENTOS ",
+      "grupo": 402
+    },
+    "543": {
+      "area": 7,
+      "descricao": "BAIXA COMPLEXIDADE DE MEDICAMENTOS",
+      "grupo": 443
+    },
+    "545": {
+      "area": 7,
+      "descricao": "RENOVAÇÃO CBPF INTERNACIONAL DE MEDICAMENTOS ",
+      "grupo": 444
+    },
+    "548": {
+      "area": 7,
+      "descricao": "RENOVAÇÃO CBPDA DE MEDICAMENTOS ",
+      "grupo": 448
+    },
+    "581": {
+      "area": 7,
+      "descricao": "CBPDA DE PRODUTOS PARA SAÚDE",
+      "grupo": 422
+    },
+    "583": {
+      "area": 7,
+      "descricao": "BAIXA COMPLEXIDADE DE PRODUTOS PARA SAÚDE",
+      "grupo": 443
+    },
+    "586": {
+      "area": 7,
+      "descricao": "CBPF INTERNACIONAL DE PRODUTOS PARA SAÚDE, EXCETO MERCOSUL",
+      "grupo": 402
+    },
+    "587": {
+      "area": 7,
+      "descricao": "CBPF INTERNACIONAL DE PRODUTOS PARA SAÚDE, INDÚSTRIAS DO MERCOSUL",
+      "grupo": 402
+    },
+    "588": {
+      "area": 7,
+      "descricao": "CBPF NACIONAL DE PRODUTOS PARA SAÚDE",
+      "grupo": 381
+    },
+    "592": {
+      "area": 7,
+      "descricao": "RENOVAÇÃO DE CBPDA DE PRODUTOS PARA SAÚDE",
+      "grupo": 448
+    },
+    "598": {
+      "area": 7,
+      "descricao": "RENOVAÇÃO DE CBPF INTERNACIONAL DE PRODUTOS PARA SAÚDE, EXCETO MERCOSUL",
+      "grupo": 444
+    },
+    "599": {
+      "area": 7,
+      "descricao": "RENOVAÇÃO DE CBPF INTERNACIONAL DE PRODUTOS PARA SAÚDE, INDÚSTRIAS DO MERCOSUL",
+      "grupo": 444
+    },
+    "6": {
+      "area": 1,
+      "descricao": "Novos - Priorizados (RDC 1.001/2025)",
+      "grupo": 1
+    },
+    "600": {
+      "area": 7,
+      "descricao": "RENOVAÇÃO DE CBPF NACIONAL DE PRODUTOS PARA SAÚDE ",
+      "grupo": 403
+    },
+    "622": {
+      "area": 7,
+      "descricao": "CBPF INTERNACIONAL DE PRODUTOS PARA SAÚDE, INDÚSTRIAS DO MDSAP",
+      "grupo": 402
+    },
+    "624": {
+      "area": 7,
+      "descricao": "CBPF NACIONAL DE PRODUTOS PARA SAÚDE, INDÚSTRIAS DO MDSAP",
+      "grupo": 381
+    },
+    "627": {
+      "area": 7,
+      "descricao": "RENOVAÇÃO DE CBPF INTERNACIONAL DE PRODUTOS PARA SAÚDE, INDÚSTRIAS DO MDSAP",
+      "grupo": 444
+    },
+    "629": {
+      "area": 7,
+      "descricao": "RENOVAÇÃO DE CBPF NACIONAL DE PRODUTOS PARA SAÚDE, INDÚSTRIAS DO MDSAP",
+      "grupo": 403
+    },
+    "63": {
+      "area": 1,
+      "descricao": "Radiofármacos - Priorizados",
+      "grupo": 21
+    },
+    "630": {
+      "area": 7,
+      "descricao": "BAIXA COMPLEXIDADE DE ALIMENTOS",
+      "grupo": 443
+    },
+    "631": {
+      "area": 7,
+      "descricao": "CBPF INTERNACIONAL DE ALIMENTOS ",
+      "grupo": 402
+    },
+    "632": {
+      "area": 7,
+      "descricao": " RENOVAÇÃO CBPF INTERNACIONAL DE ALIMENTOS",
+      "grupo": 444
+    },
+    "635": {
+      "area": 7,
+      "descricao": "CBPF NACIONAL DE ALIMENTOS",
+      "grupo": 381
+    },
+    "638": {
+      "area": 7,
+      "descricao": "RENOVAÇÃO DE CBPF NACIONAL DE ALIMENTOS",
+      "grupo": 403
+    },
+    "64": {
+      "area": 1,
+      "descricao": "DDCM - Priorizados (RDC 204/2017)",
+      "grupo": 41
+    },
+    "640": {
+      "area": 7,
+      "descricao": "BAIXA COMPLEXIDADE DE COSMÉTICOS E SANEANTES ",
+      "grupo": 443
+    },
+    "641": {
+      "area": 7,
+      "descricao": "CBPF NACIONAL E INTERNACIONAL DE COSMÉTICOS E SANEANTES ",
+      "grupo": 462
+    },
+    "644": {
+      "area": 7,
+      "descricao": "RENOVAÇÃO DE CBPF NACIONAL E INTERNACIONAL DE COSMÉTICOS E SANEANTES",
+      "grupo": 463
+    },
+    "647": {
+      "area": 7,
+      "descricao": "BAIXA COMPLEXIDADE DE INSUMOS FARMACÊUTICOS",
+      "grupo": 443
+    },
+    "648": {
+      "area": 7,
+      "descricao": "CBPDA DE INSUMOS FARMACÊUTICOS",
+      "grupo": 422
+    },
+    "650": {
+      "area": 7,
+      "descricao": "CBPF INTERNACIONAL DE INSUMOS FARMACÊUTICOS ",
+      "grupo": 402
+    },
+    "653": {
+      "area": 7,
+      "descricao": "CBPF NACIONAL DE INSUMOS FARMACÊUTICOS",
+      "grupo": 381
+    },
+    "656": {
+      "area": 7,
+      "descricao": "RENOVAÇÃO DE CBPDA DE INSUMOS FARMACÊUTICOS",
+      "grupo": 448
+    },
+    "657": {
+      "area": 7,
+      "descricao": "RENOVAÇÃO DE CBPF INTERNACIONAL DE INSUMOS FARMACÊUTICOS",
+      "grupo": 444
+    },
+    "66": {
+      "area": 1,
+      "descricao": "DEEC, Inclusão e Emenda ao Protocolo - Priorizados (RDC 204/2017)",
+      "grupo": 41
+    },
+    "662": {
+      "area": 7,
+      "descricao": "RENOVAÇÃO DE CBPF NACIONAL DE INSUMOS FARMACÊUTICOS ",
+      "grupo": 403
+    },
+    "7": {
+      "area": 1,
+      "descricao": "Inovadores - Priorizados (RDC 1.001/2025)",
+      "grupo": 1
+    },
+    "725": {
+      "area": 2,
+      "descricao": "Repelentes*",
+      "grupo": 296
+    },
+    "761": {
+      "area": 6,
+      "descricao": "FÓRMULAS INFANTIS",
+      "grupo": 61
+    },
+    "762": {
+      "area": 6,
+      "descricao": "ALIMENTOS PARA NUTRIÇÃO ENTERAL",
+      "grupo": 61
+    },
+    "768": {
+      "area": 6,
+      "descricao": "ALTERAÇÃO DE FÓRMULA",
+      "grupo": 501
+    },
+    "782": {
+      "area": 6,
+      "descricao": "PETIÇÕES SIMPLIFICADAS",
+      "grupo": 501
+    },
+    "783": {
+      "area": 6,
+      "descricao": "PETIÇÕES DE MARCAS",
+      "grupo": 501
+    },
+    "784": {
+      "area": 6,
+      "descricao": "ADEQUAÇÃO A NOVOS REGULAMENTOS",
+      "grupo": 501
+    },
+    "789": {
+      "area": 6,
+      "descricao": "AVALIAÇÃO DE PROBIÓTICOS E ENZIMAS ",
+      "grupo": 522
+    },
+    "790": {
+      "area": 6,
+      "descricao": "AVALIAÇÃO DE NOVOS ALIMENTOS E NOVOS INGREDIENTES, EXCETO PROBIÓTICOS E ENZIMAS",
+      "grupo": 522
+    },
+    "791": {
+      "area": 6,
+      "descricao": "AVALIAÇÃO DE ALERGENICIDADE DE ALIMENTOS ",
+      "grupo": 522
+    },
+    "792": {
+      "area": 6,
+      "descricao": "AVALIAÇÃO DE ADITIVOS AROMATIZANTES DE ESPÉCIE BOTÂNICA",
+      "grupo": 522
+    },
+    "793": {
+      "area": 6,
+      "descricao": "AVALIAÇÃO DE ENZIMAS PARA USO COMO COADJUVANTE DE TECNOLOGIA",
+      "grupo": 522
+    },
+    "794": {
+      "area": 6,
+      "descricao": "AVALIAÇÃO DE MATERIAIS EM CONTATO COM ALIMENTOS",
+      "grupo": 522
+    },
+    "795": {
+      "area": 6,
+      "descricao": "AVALIAÇÃO DE RISCO DE PRODUTOS DE USO VETERINÁRIO",
+      "grupo": 522
+    },
+    "801": {
+      "area": 6,
+      "descricao": "FÓRMULAS INFANTIS",
+      "grupo": 521
+    },
+    "802": {
+      "area": 6,
+      "descricao": "ALIMENTOS PARA NUTRIÇÃO ENTERAL",
+      "grupo": 521
+    },
+    "804": {
+      "area": 6,
+      "descricao": "AVALIAÇÃO ADITIVOS  E COADJUVANTES DE TECNOLOGIA,EXCETO AROMATIZANTES DE ESPÉCIE BOTÂNICA E ENZIMAS",
+      "grupo": 522
+    },
+    "82": {
+      "area": 1,
+      "descricao": "Fitoterápicos - Doenças raras (RDC 205/2017)",
+      "grupo": 1
+    },
+    "821": {
+      "area": 1,
+      "descricao": "Produtos Biológicos",
+      "grupo": 1
+    },
+    "822": {
+      "area": 1,
+      "descricao": "Radiofármacos",
+      "grupo": 1
+    },
+    "823": {
+      "area": 1,
+      "descricao": "Específicos",
+      "grupo": 1
+    },
+    "824": {
+      "area": 1,
+      "descricao": "Dinamizados",
+      "grupo": 1
+    },
+    "825": {
+      "area": 1,
+      "descricao": "Fitoterápicos",
+      "grupo": 1
+    },
+    "84": {
+      "area": 1,
+      "descricao": "Novos - Doenças raras (RDC205/2017)",
+      "grupo": 1
+    },
+    "841": {
+      "area": 1,
+      "descricao": "Novos",
+      "grupo": 1
+    },
+    "86": {
+      "area": 1,
+      "descricao": "Radiofármacos - Priorizados",
+      "grupo": 1
+    },
+    "861": {
+      "area": 1,
+      "descricao": "Genéricos e Similares",
+      "grupo": 1
+    },
+    "862": {
+      "area": 1,
+      "descricao": "Inovadores",
+      "grupo": 1
+    },
+    "881": {
+      "area": 1,
+      "descricao": "Clones",
+      "grupo": 1
+    },
+    "901": {
+      "area": 1,
+      "descricao": "DEEC, Inclusão e Emenda ao Protocolo",
+      "grupo": 41
+    },
+    "902": {
+      "area": 1,
+      "descricao": "DDCM - Doenças raras (RDC 205/2017)",
+      "grupo": 41
+    },
+    "903": {
+      "area": 1,
+      "descricao": "DDCM",
+      "grupo": 41
+    },
+    "904": {
+      "area": 1,
+      "descricao": "Modificação de DDCM – Qualidade",
+      "grupo": 41
+    },
+    "905": {
+      "area": 1,
+      "descricao": "Modificação de DDCM – Qualidade – Doenças raras (RDC 205/2017)",
+      "grupo": 41
+    },
+    "906": {
+      "area": 1,
+      "descricao": "Modificação de DDCM – Qualidade – Priorizados (RDC 204/2017)",
+      "grupo": 41
+    },
+    "908": {
+      "area": 1,
+      "descricao": "Dinamizados - Menor Complexidade",
+      "grupo": 21
+    },
+    "909": {
+      "area": 1,
+      "descricao": "Dinamizados - Maior complexidade ",
+      "grupo": 21
+    },
+    "910": {
+      "area": 1,
+      "descricao": "Dinamizados - Maior complexidade - Priorizados (RDC 1.001/2025)",
+      "grupo": 21
+    },
+    "913": {
+      "area": 1,
+      "descricao": "Específicos - Maior complexidade",
+      "grupo": 21
+    },
+    "914": {
+      "area": 1,
+      "descricao": "Específicos - Menor complexidade",
+      "grupo": 21
+    },
+    "915": {
+      "area": 1,
+      "descricao": "Específicos - Menor complexidade - Priorizados (RDC 1.001/2025)",
+      "grupo": 21
+    },
+    "916": {
+      "area": 1,
+      "descricao": "Específicos - Prazo de análise",
+      "grupo": 21
+    },
+    "917": {
+      "area": 1,
+      "descricao": "Específicos",
+      "grupo": 561
+    },
+    "918": {
+      "area": 1,
+      "descricao": "Dinamizados",
+      "grupo": 561
+    },
+    "919": {
+      "area": 1,
+      "descricao": "Fitoterápicos",
+      "grupo": 561
+    },
+    "920": {
+      "area": 1,
+      "descricao": "Fitoterápicos - Maior complexidade",
+      "grupo": 21
+    },
+    "921": {
+      "area": 1,
+      "descricao": "Rotulagem e Nome Comercial",
+      "grupo": 542
+    },
+    "922": {
+      "area": 1,
+      "descricao": "Produtos de Cannabis",
+      "grupo": 1
+    },
+    "923": {
+      "area": 1,
+      "descricao": "Produtos de Cannabis - Maior complexidade",
+      "grupo": 21
+    },
+    "924": {
+      "area": 1,
+      "descricao": "Radiofármacos",
+      "grupo": 21
+    },
+    "941": {
+      "area": 2,
+      "descricao": "Certificados e Certidões",
+      "grupo": 297
+    },
+    "961": {
+      "area": 1,
+      "descricao": "Fitoterápicos - Menor complexidade - Priorizados (RDC 1.001/2025)",
+      "grupo": 21
+    },
+    "962": {
+      "area": 1,
+      "descricao": "Fitoterápicos - Prazo de análise",
+      "grupo": 21
+    },
+    "981": {
+      "area": 1,
+      "descricao": "Fitoterápicos - Menor complexidade",
+      "grupo": 21
+    }
+  }
+}
