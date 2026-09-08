@@ -56,6 +56,36 @@ def test_crawl_writes_snapshot_meta_and_catalog(client, fake_api, tmp_path):
     }
 
 
+def test_transport_errors_are_retried_then_recorded_not_fatal(client, fake_api, tmp_path):
+    """A timeout or reset mid-response on one subfila must not lose the whole crawl."""
+    import httpx
+
+    flaky: dict[int, int] = {167: 1, 161: 5}  # 167 recovers on retry; 161 never does
+    original = fake_api.handler
+
+    def handler(request):
+        if request.url.path.endswith("/fila/consulta"):
+            sub = json.loads(request.read())["filter"]["subfila"]
+            if flaky.get(sub, 0) > 0:
+                flaky[sub] -= 1
+                raise httpx.ReadTimeout("timed out", request=request)
+        return original(request)
+
+    client._http._transport = httpx.MockTransport(handler)
+    slept: list[float] = []
+    logs: list[str] = []
+    meta = crawl(
+        client, tmp_path, day=date(2026, 9, 6), areas=[8], log=logs.append, sleep=slept.append
+    )
+
+    assert meta["subfilas_crawled"] == 16 and meta["subfilas_total"] == 17
+    assert meta["rows"] == 40  # 167 came back after one retry
+    assert meta["failed"] == [{"subfila": 161, "error": "ReadTimeout: timed out"}]
+    assert slept == [5.0, 5.0, 10.0]  # one retry for 167, two for 161
+    assert 161 not in load_snapshot(tmp_path, date(2026, 9, 6))
+    assert any("retry 1/2" in line for line in logs)
+
+
 def test_weekdays_reuse_the_catalog_and_mondays_walk_it(client, fake_api, tmp_path):
     crawl(client, tmp_path, day=date(2026, 9, 6), areas=[8], log=lambda s: None)
     fake_api.requests.clear()

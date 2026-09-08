@@ -17,11 +17,13 @@ from __future__ import annotations
 
 import gzip
 import json
+import time
 from collections.abc import Callable, Iterable
 from datetime import date, datetime
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
+import httpx
 from anvisa import AnvisaError, Client
 
 BRT = ZoneInfo("America/Sao_Paulo")
@@ -76,6 +78,29 @@ def walk_catalog(client: Client, wanted: set[int] | None = None) -> dict:
     return catalog
 
 
+def fetch_queue(
+    client: Client,
+    sub: int,
+    *,
+    log: Callable[[str], None],
+    attempts: int = 3,
+    sleep: Callable[[float], None] = time.sleep,
+) -> list:
+    """One subfila's queue, retrying transport errors (timeouts, resets, a connection dropped
+    mid-body) with a short backoff. The anvisa client only wraps HTTP status errors into
+    AnvisaError; transport errors surface as httpx exceptions and would otherwise abort the
+    whole crawl."""
+    for attempt in range(1, attempts + 1):
+        try:
+            return client.fila.consulta(sub)  # [] when nothing is queued
+        except httpx.TransportError as exc:
+            if attempt == attempts:
+                raise
+            log(f"subfila {sub}: {type(exc).__name__}: {exc}; retry {attempt}/{attempts - 1}")
+            sleep(5.0 * attempt)
+    raise AssertionError("unreachable")
+
+
 def crawl(
     client: Client,
     out: Path,
@@ -84,6 +109,7 @@ def crawl(
     areas: Iterable[int] | None = None,
     refresh_catalog: bool | None = None,
     log: Callable[[str], None] = print,
+    sleep: Callable[[float], None] = time.sleep,
 ) -> dict:
     """Crawl and write the day's files. Returns the meta dict. A failed subfila is recorded in
     meta and skipped; the snapshot still holds every subfila that answered.
@@ -113,10 +139,11 @@ def crawl(
     failed: list[dict] = []
     for sub, info in subfilas.items():
         try:
-            rows = client.fila.consulta(sub)  # [] when nothing is queued
-        except AnvisaError as exc:
-            failed.append({"subfila": sub, "error": str(exc)})
-            log(f"subfila {sub}: {exc}")
+            rows = fetch_queue(client, sub, log=log, sleep=sleep)
+        except (AnvisaError, httpx.HTTPError) as exc:
+            error = f"{type(exc).__name__}: {exc}"
+            failed.append({"subfila": sub, "error": error})
+            log(f"subfila {sub}: {error}")
             continue
         queues.append(
             {
