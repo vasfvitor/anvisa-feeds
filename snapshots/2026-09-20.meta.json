@@ -1,0 +1,41 @@
+{
+  "date": "2026-09-20",
+  "started": "2026-09-20T10:26:27.232050-03:00",
+  "finished": "2026-09-20T10:32:54.372780-03:00",
+  "seconds": 387,
+  "catalog_refreshed": false,
+  "requests": 314,
+  "rows": 10069,
+  "subfilas_total": 314,
+  "subfilas_crawled": 307,
+  "failed": [
+    {
+      "subfila": 183,
+      "error": "RateLimitError: HTTP 429: rate limit exceeded (25 burst, 1 request/s)"
+    },
+    {
+      "subfila": 21,
+      "error": "RateLimitError: HTTP 429: rate limit exceeded (25 burst, 1 request/s)"
+    },
+    {
+      "subfila": 2166,
+      "error": "RateLimitError: HTTP 429: rate limit exceeded (25 burst, 1 request/s)"
+    },
+    {
+      "subfila": 4089,
+      "error": "RateLimitError: HTTP 429: rate limit exceeded (25 burst, 1 request/s)"
+    },
+    {
+      "subfila": 41,
+      "error": "RateLimitError: HTTP 429: rate limit exceeded (25 burst, 1 request/s)"
+    },
+    {
+      "subfila": 481,
+      "error": "RateLimitError: HTTP 429: rate limit exceeded (25 burst, 1 request/s)"
+    },
+    {
+      "subfila": 600,
+      "error": "RateLimitError: HTTP 429: rate limit exceeded (25 burst, 1 request/s)"
+    }
+  ]
+}
