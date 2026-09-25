@@ -1,0 +1,12 @@
+{
+  "date": "2026-09-25",
+  "started": "2026-09-25T11:24:30.883281-03:00",
+  "finished": "2026-09-25T11:29:22.949639-03:00",
+  "seconds": 292,
+  "catalog_refreshed": false,
+  "requests": 314,
+  "rows": 9837,
+  "subfilas_total": 314,
+  "subfilas_crawled": 314,
+  "failed": []
+}
