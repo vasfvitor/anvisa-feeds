@@ -49,6 +49,26 @@
       "area": 1,
       "descricao": "PROCEDIMENTO OTIMIZADO DE ANÁLISE"
     },
+    "1428": {
+      "area": 2,
+      "descricao": "CADASTRO DE FABRICANTE INTERNACIONAL"
+    },
+    "1445": {
+      "area": 2,
+      "descricao": "Solicitar Inclusão de nova substância"
+    },
+    "1446": {
+      "area": 2,
+      "descricao": "Solicitar Inclusão de nova função para substância"
+    },
+    "1447": {
+      "area": 2,
+      "descricao": "Solicitar Inclusão de nova embalagem"
+    },
+    "1448": {
+      "area": 2,
+      "descricao": "Solicitar Inclusão de nova forma física"
+    },
     "21": {
       "area": 1,
       "descricao": "PÓS-REGISTRO"
@@ -1298,10 +1318,35 @@
       "descricao": "Produtos de Cannabis - Menor complexidade",
       "grupo": 21
     },
+    "4349": {
+      "area": 2,
+      "descricao": "CADASTRO DE FABRICANTE INTERNACIONAL",
+      "grupo": 1428
+    },
     "4367": {
       "area": 1,
       "descricao": "Fitoterápicos - Adequação de bula e rotulagem à RDC nº 1.004/2025",
       "grupo": 21
+    },
+    "4387": {
+      "area": 2,
+      "descricao": "Solicitar Inclusão de nova substância",
+      "grupo": 1445
+    },
+    "4388": {
+      "area": 2,
+      "descricao": "Solicitar Inclusão de nova função para substância",
+      "grupo": 1446
+    },
+    "4389": {
+      "area": 2,
+      "descricao": "Solicitar Inclusão de nova embalagem",
+      "grupo": 1447
+    },
+    "4390": {
+      "area": 2,
+      "descricao": "Solicitar Inclusão de nova forma física",
+      "grupo": 1448
     },
     "481": {
       "area": 9,
