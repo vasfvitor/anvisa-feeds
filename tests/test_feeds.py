@@ -1,3 +1,4 @@
+import json
 from datetime import date
 from xml.etree import ElementTree as ET
 
@@ -61,3 +62,52 @@ def test_only_the_newest_entry_carries_the_queue(client, tmp_path):
     contents = [e.find(f"{ATOM}content").text for e in entries]
     assert [c.count("Fila hoje") for c in contents] == [1, 0]
     assert contents[1].startswith("<p>1 saiu, 39 mudaram de posição</p>")  # the 06→07 diff
+
+
+def test_discoverability_files_and_head_tags(client, tmp_path):
+    snapshots, site = tmp_path / "snapshots", tmp_path / "site"
+    crawl(client, snapshots, day=date(2026, 9, 6), areas=[8], log=lambda s: None)
+    next_day(snapshots, date(2026, 9, 6), date(2026, 9, 7))
+    result = build_site(snapshots, site, base_url="https://x.test/f/", base_tag="x.test,2026:f")
+    finished = load_meta(snapshots, date(2026, 9, 7))["finished"]
+
+    assert (site / "robots.txt").read_text() == (
+        "User-agent: *\nAllow: /\nSitemap: https://x.test/f/sitemap.xml\n"
+    )
+
+    sm = "{http://www.sitemaps.org/schemas/sitemap/0.9}"
+    urls = ET.parse(site / "sitemap.xml").getroot().findall(f"{sm}url")
+    assert len(urls) == result["feeds"] + 1  # index + one page per feed
+    locs = [u.find(f"{sm}loc").text for u in urls]
+    assert locs[0] == "https://x.test/f/" and "https://x.test/f/fila/167.html" in locs
+    assert not any(loc.endswith(".xml") for loc in locs)
+    assert {u.find(f"{sm}lastmod").text for u in urls} == {finished}
+
+    opml = ET.parse(site / "feeds.opml").getroot()
+    rss = opml.findall(".//outline[@type='rss']")
+    assert len(rss) == result["feeds"]
+    (o167,) = [o for o in rss if o.get("xmlUrl") == "https://x.test/f/fila/167.xml"]
+    assert o167.get("htmlUrl") == "https://x.test/f/fila/167.html"
+
+    page = (site / "fila" / "167.html").read_text(encoding="utf-8")
+    head = page.split("<body>")[0]
+    assert '<link rel="canonical" href="https://x.test/f/fila/167.html">' in head
+    assert (
+        '<link rel="alternate" type="application/atom+xml" title="' in head
+        and 'href="https://x.test/f/fila/167.xml">' in head
+    )
+    assert '<meta name="description" content="Fila de análise da ANVISA, ' in head
+    assert "39 processos em 2026-09-07" in head
+    assert '<meta property="og:url" content="https://x.test/f/fila/167.html">' in head
+    assert "application/ld+json" not in head  # Dataset block is index-only
+
+    index = (site / "index.html").read_text(encoding="utf-8")
+    assert '<link rel="canonical" href="https://x.test/f/">' in index
+    assert 'href="feeds.opml"' in index and "Perguntas frequentes" in index
+    start = index.index('<script type="application/ld+json">') + len(
+        '<script type="application/ld+json">'
+    )
+    ld = json.loads(index[start : index.index("</script>", start)])
+    assert ld["@type"] == "Dataset" and ld["dateModified"] == finished
+    assert ld["temporalCoverage"] == "2026-09-06/.."
+    assert ld["distribution"][0]["contentUrl"] == "https://x.test/f/feeds.opml"

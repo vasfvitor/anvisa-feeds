@@ -1,8 +1,10 @@
 # anvisa-feeds
 
 Daily snapshots of ANVISA's **filas de análise** (the queues of petitions waiting for
-analysis), published as one Atom feed per subfila. Subscribe to the feed of your subfila and
-filter on your process number; no accounts, no notifications service, no server.
+analysis), published as one Atom feed per subfila at
+**<https://vasfvitor.github.io/anvisa-feeds>**. Subscribe to the feed of your subfila and
+filter on your process number; no accounts, no notifications service, no server. To subscribe
+to every queue at once, import `feeds.opml` into your reader.
 
 Built on the [`anvisa`](https://pypi.org/project/anvisa/) client for ANVISA's official
 Consultas Externas API. Data is ANVISA's, reproduced without alteration, and stamped with the
@@ -21,6 +23,9 @@ time of the last successful fetch. It does not replace the official consulta.
    `site/`: `index.html`, and `fila/<id>.xml` + `fila/<id>.html` for every subfila. One feed
    entry per subfila per day; its content lists the day's events and the queue as it stands.
    Feeds carry an XSL style sheet, so a browser shows a readable page instead of raw XML.
+   Every page links its feed for reader auto-discovery and carries canonical, description and
+   Open Graph tags; the build also writes `sitemap.xml`, `robots.txt`, `feeds.opml` and a
+   schema.org `Dataset` block on the index.
 4. The site is deployed to GitHub Pages from the workflow artifact. Git history is the
    changelog.
 
