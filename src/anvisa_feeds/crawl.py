@@ -92,7 +92,7 @@ def fetch_queue(
     whole crawl."""
     for attempt in range(1, attempts + 1):
         try:
-            return client.fila.consulta(sub)  # [] when nothing is queued
+            return client.fila.query(sub)  # [] when nothing is queued
         except httpx.TransportError as exc:
             if attempt == attempts:
                 raise
