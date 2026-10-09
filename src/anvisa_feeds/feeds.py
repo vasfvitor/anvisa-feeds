@@ -71,7 +71,7 @@ ul.filas{list-style:none;margin:0;padding:0}
 ul.filas li{display:flex;gap:.75rem;align-items:baseline;padding:.3rem 0;
 border-bottom:1px solid var(--line)}
 ul.filas li:last-child{border-bottom:0}ul.filas .t{flex:1;min-width:0}
-ul.filas .n{min-width:3.5ch;text-align:right;color:var(--fg);font-variant-numeric:tabular-nums}
+ul.filas .n{min-width:9ch;text-align:right;color:var(--fg);font-size:.9em;white-space:nowrap}
 ul.filas .n.zero{color:var(--muted)}ul.filas .feed{font-size:.85em;color:var(--muted)}
 ul.filas .feed:hover{color:var(--accent)}
 .hide{display:none!important}
@@ -82,6 +82,11 @@ ul.events .entered::before{content:"+";color:var(--up)}ul.events .left::before{c
 color:var(--down)}
 ul.events .moved::before{content:"↕"}ul.events small{color:var(--muted)}
 details{margin:.5rem 0}summary{cursor:pointer;color:var(--muted)}summary:hover{color:var(--fg)}
+ul.days{list-style:none;padding:0;margin:0}
+ul.days>li{padding:.25rem 0;border-bottom:1px solid var(--line)}
+ul.days details{margin:0}ul.days summary{color:var(--fg)}ul.days .quiet{color:var(--muted)}
+ul.days b{font-weight:600;margin-right:.5em}.copy{cursor:pointer;font:inherit;font-size:.85em}
+.copy.done{color:var(--up);border-color:var(--up)}
 table.queue{width:100%;border-collapse:collapse;margin:.5rem 0 1rem;font-size:.95em}
 table.queue caption{text-align:left;font-weight:600;padding:.5rem 0;caption-side:top}
 table.queue th{text-align:left;font-weight:600;color:var(--muted);font-size:.85em;
@@ -115,6 +120,13 @@ el.classList.toggle('hide',!ok);shown+=ok;});
     if(hint)hint.textContent=q?shown+' de '+items.length:'';
   });
 });
+if(navigator.clipboard)document.querySelectorAll('button.copy').forEach(function(b){
+  b.hidden=false;b.addEventListener('click',function(){
+    navigator.clipboard.writeText(b.dataset.copy).then(function(){
+      b.textContent='Copiado';b.classList.add('done');});});});
+document.addEventListener('keydown',function(e){
+  var f=document.querySelector('input.filter');
+  if(f&&e.key==='/'&&document.activeElement!==f){e.preventDefault();f.focus();}});
 """.strip()
 
 FEED_XSL = f"""<?xml version="1.0" encoding="utf-8"?>
@@ -193,6 +205,24 @@ def event_li(e: dict) -> str:
     return f'<li class="moved">{p}: {e["de"]} → {e["para"]}</li>'
 
 
+def history_html(days_events: list[tuple[date, list[dict]]]) -> str:
+    """Earlier days on the page, newest first: the summary, and entries/exits on demand.
+    Position changes are only counted; the feed has them in full."""
+    if not days_events:
+        return ""
+    out = ["<h2>Dias anteriores</h2>", '<ul class="days">']
+    for day, events in reversed(days_events):
+        changes = [e for e in events if e["type"] != "moved"]
+        label = f"<b>{day.isoformat()}</b> {html.escape(summary(events))}"
+        if changes:
+            items = '<ul class="events">' + "".join(event_li(e) for e in changes) + "</ul>"
+            out.append(f"<li><details><summary>{label}</summary>{items}</details></li>")
+        else:
+            out.append(f'<li class="quiet">{label}</li>')
+    out.append("</ul>")
+    return "".join(out)
+
+
 def queue_html(queue: list[dict]) -> str:
     caption = f"Fila hoje ({len(queue)} processos)"
     if not queue:
@@ -264,6 +294,8 @@ def page(
         '<!doctype html><html lang="pt-BR"><head><meta charset="utf-8">',
         '<meta name="viewport" content="width=device-width,initial-scale=1">',
         '<meta name="color-scheme" content="light dark">',
+        '<meta name="theme-color" content="#fff" media="(prefers-color-scheme: light)">',
+        '<meta name="theme-color" content="#111214" media="(prefers-color-scheme: dark)">',
         f"<title>{q(title)}</title>",
         f'<meta name="description" content="{q(description)}">',
         f'<link rel="canonical" href="{q(url)}">',
@@ -362,6 +394,7 @@ def build_site(
         title = f"{name} · {grupo} · {area}"
         newest_day = days_events[-1][0]
         entries = []
+        feed_url = f"{base_url}/fila/{sub}.xml"
         for day, events in reversed(days_events):
             queue = latest.get(sub) if day == newest_day else None  # full queue only once
             entries.append(
@@ -394,9 +427,10 @@ def build_site(
             f"</nav><h1>{html.escape(name)}</h1>"
             f'<p class="meta"><span>{n} processos em {latest_day.isoformat()}</span>'
             f'<a class="pill" href="{sub}.xml" title="Cole este endereço no seu leitor de feeds">'
-            "Feed Atom</a></p>"
+            f'Feed Atom</a><button class="pill copy" type="button" data-copy="{feed_url}" hidden>'
+            "Copiar endereço do feed</button></p>"
         )
-        body = f"<h2>{newest_day.isoformat()}</h2>"
+        body = f"<h2>Mudanças em {newest_day.isoformat()}</h2>"
         events, queue_block = entries[0]["content"], ""
         if n >= FILTER_MIN_ROWS:
             # the filter sits right above the table, so split the entry content around it
@@ -405,7 +439,7 @@ def build_site(
             queue_block = filter_box("#queue", "tbody tr", "Filtrar por processo ou assunto") + (
                 queue_block
             )
-        body += events + queue_block
+        body += events + queue_block + history_html(days_events[:-1])
         description = (
             f"Fila de análise da ANVISA, {name} ({grupo}, {area}): "
             f"{n} processos em {latest_day.isoformat()}. "
@@ -499,7 +533,7 @@ def build_site(
                 zero = " zero" if n == 0 else ""
                 lines.append(
                     f'<li><span class="t"><a href="fila/{sub}.html">{html.escape(name)}</a></span>'
-                    f'<span class="n{zero}" title="processos na fila">{n}</span>'
+                    f'<span class="n{zero}">{f"{n} na fila" if n else "vazia"}</span>'
                     f'<a class="feed" href="fila/{sub}.xml" title="Feed Atom desta subfila">'
                     "feed</a></li>"
                 )
