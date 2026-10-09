@@ -2,7 +2,7 @@
 
 Daily snapshots of ANVISA's **filas de análise** (the queues of petitions waiting for
 analysis), published as one Atom feed per subfila at
-**<https://vasfvitor.github.io/anvisa-feeds>**. Subscribe to the feed of your subfila and
+**<https://anvisa.feeds.abelhaninja.de>**. Subscribe to the feed of your subfila and
 filter on your process number; no accounts, no notifications service, no server. To subscribe
 to every queue at once, import `feeds.opml` into your reader.
 

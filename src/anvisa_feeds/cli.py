@@ -49,8 +49,8 @@ def crawl_cmd(
 def build_cmd(
     snapshots: Path = typer.Option(Path("snapshots")),
     site: Path = typer.Option(Path("site")),
-    base_url: str = typer.Option("https://vasfvitor.github.io/anvisa-feeds", help="site URL"),
-    base_tag: str = typer.Option("vasfvitor.github.io,2026:anvisa-feeds", help="tag URI authority"),
+    base_url: str = typer.Option("https://anvisa.feeds.abelhaninja.de", help="site URL"),
+    base_tag: str = typer.Option("anvisa.feeds.abelhaninja.de,2026:feeds", help="tag authority"),
     days: int = typer.Option(30, help="how many days of history each feed carries"),
 ) -> None:
     """Render index.html plus one Atom feed and one page per subfila from the snapshots."""
