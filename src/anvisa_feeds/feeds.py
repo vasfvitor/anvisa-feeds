@@ -149,10 +149,16 @@ A versão para ler no navegador está em
 <a><xsl:attribute name="href">
 <xsl:value-of select="atom:feed/atom:link[@rel='alternate']/@href"/>
 </xsl:attribute>página da fila</a>.</div>
+<h2>Entradas do feed</h2>
+<ul class="days">
 <xsl:for-each select="atom:feed/atom:entry">
-<div class="entry"><h2><xsl:value-of select="atom:title"/></h2>
-<xsl:value-of select="atom:content" disable-output-escaping="yes"/></div>
+<li><a><xsl:attribute name="href">
+<xsl:value-of select="atom:link[@rel='alternate']/@href"/></xsl:attribute>
+<xsl:value-of select="atom:title"/></a></li>
 </xsl:for-each>
+</ul>
+<p class="hint">O conteúdo de cada entrada aparece no seu leitor de feeds;
+no navegador, abra a página da fila.</p>
 </main>
 </body></html>
 </xsl:template>
@@ -267,7 +273,9 @@ def atom_feed(
         ET.SubElement(entry, "updated").text = e["updated"]
         ET.SubElement(entry, "link", rel="alternate", href=e["link"])
         ET.SubElement(entry, "content", type="html").text = e["content"]
-    # the stylesheet makes a browser show a readable page instead of raw XML; readers ignore it
+    # the stylesheet makes a browser show a readable page instead of raw XML; readers ignore it.
+    # It lists entries as links only: rendering their HTML needs disable-output-escaping, which
+    # Firefox does not support (it would print the tags as text).
     return (
         b'<?xml version="1.0" encoding="utf-8"?>\n'
         b'<?xml-stylesheet type="text/xsl" href="../feed.xsl"?>\n'
