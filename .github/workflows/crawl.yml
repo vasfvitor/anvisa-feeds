@@ -90,6 +90,9 @@ jobs:
 
   deploy:
     needs: build
+    # without this, a skipped crawl (build_only) also skips the deploy: the default success()
+    # looks at every upstream job, not just `build`
+    if: ${{ always() && needs.build.result == 'success' }}
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
