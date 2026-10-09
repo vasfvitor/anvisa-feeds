@@ -39,7 +39,7 @@ def test_build_site_from_two_days(client, tmp_path):
         "2026-09-07: 1 saiu, 39 mudaram de posição"
     ]
     content = entries[0].find(f"{ATOM}content").text
-    assert "25351.216322/2025-86 (exp. " in content
+    assert "<code>25351.216322/2025-86</code> <small>exp. " in content
     assert ": saiu da fila (estava na posição 1)" in content
     assert "Fila hoje (39 processos)" in content  # the newest entry carries the queue
     finished = load_meta(snapshots, date(2026, 9, 7))["finished"]
@@ -99,7 +99,16 @@ def test_discoverability_files_and_head_tags(client, tmp_path):
     assert '<meta name="description" content="Fila de análise da ANVISA, ' in head
     assert "39 processos em 2026-09-07" in head
     assert '<meta property="og:url" content="https://x.test/f/fila/167.html">' in head
-    assert "application/ld+json" not in head  # Dataset block is index-only
+    crumbs = json.loads(head.split('<script type="application/ld+json">')[1].split("</script>")[0])
+    assert crumbs["@type"] == "BreadcrumbList"
+    assert [i["name"] for i in crumbs["itemListElement"]][1:3] == [
+        "Dispositivos Médicos",
+        "Alterações",
+    ]
+    assert (
+        crumbs["itemListElement"][2]["item"]
+        == "https://x.test/f/index.html#dispositivos-medicos--alteracoes"
+    )
 
     index = (site / "index.html").read_text(encoding="utf-8")
     assert '<link rel="canonical" href="https://x.test/f/">' in index
@@ -109,5 +118,6 @@ def test_discoverability_files_and_head_tags(client, tmp_path):
     )
     ld = json.loads(index[start : index.index("</script>", start)])
     assert ld["@type"] == "Dataset" and ld["dateModified"] == finished
-    assert ld["temporalCoverage"] == "2026-09-06/.."
+    assert ld["temporalCoverage"] == "2026-09-06/.."  # first snapshot ever
+    assert ld["spatialCoverage"]["name"] == "Brasil" and ld["publisher"]["name"] == "anvisa-feeds"
     assert ld["distribution"][0]["contentUrl"] == "https://x.test/f/feeds.opml"

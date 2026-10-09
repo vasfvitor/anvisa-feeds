@@ -46,7 +46,13 @@ For generic checks (headers, Lighthouse, hreflang) defer to the general `seo` sk
 | `robots.txt` | `User-agent: *` / `Allow: /` / `Sitemap: {base_url}/sitemap.xml`. |
 | `feeds.opml` | OPML 2.0, área → grupo → subfila outlines, `type="rss"`, `xmlUrl` and `htmlUrl` absolute. |
 | `feed.xsl` | already exists; keeps feeds readable in a browser. Do not remove the `xml-stylesheet` PI. |
-| index JSON-LD | one `Dataset` block; shape in `references/structured-data.md`. Index only. |
+| index JSON-LD | one `Dataset` block; shape in `references/structured-data.md`. |
+| fila JSON-LD | one `BreadcrumbList` (Filas › área › grupo › subfila); área/grupo items point at index anchors `#<area-slug>` and `#<area-slug>--<grupo-slug>`, which must exist. |
+
+UI rules that also affect crawlers: the pages work with JavaScript off (the inline script only
+reveals filter boxes and folds nothing that is not already in the HTML); the full queue is a
+real `<table>`; position-change events fold into `<details>` above `FOLD_MOVED_ABOVE` but stay
+in the markup. Do not add external assets, fonts or analytics.
 
 ## Content rules
 
