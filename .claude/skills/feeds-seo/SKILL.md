@@ -45,7 +45,9 @@ For generic checks (headers, Lighthouse, hreflang) defer to the general `seo` sk
 | `sitemap.xml` | index + every `fila/{id}.html`; `lastmod` = `meta["finished"]`. Feeds (`.xml`) are not pages and are not listed. |
 | `robots.txt` | `User-agent: *` / `Allow: /` / `Sitemap: {base_url}/sitemap.xml`. |
 | `feeds.opml` | OPML 2.0, área → grupo → subfila outlines, `type="rss"`, `xmlUrl` and `htmlUrl` absolute. |
-| `feed.xsl` | already exists; keeps feeds readable in a browser. Do not remove the `xml-stylesheet` PI. |
+| `feed.xsl` | keeps feeds readable in a browser: explanation box plus entry titles as links. Never use `disable-output-escaping` (Firefox prints the tags as text). Do not remove the `xml-stylesheet` PI. |
+| `fila/<id>.json` | the subfila's queue and the day's events as data; linked from the page's meta line, not in the sitemap. |
+| notice | `build --notice "…"` renders a red `.box.warn` on every page; crawl.yml passes it when the crawl job failed. |
 | index JSON-LD | one `Dataset` block; shape in `references/structured-data.md`. |
 | fila JSON-LD | one `BreadcrumbList` (Filas › área › grupo › subfila); área/grupo items point at index anchors `#<area-slug>` and `#<area-slug>--<grupo-slug>`, which must exist. |
 

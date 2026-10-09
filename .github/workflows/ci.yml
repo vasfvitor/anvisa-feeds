@@ -1,0 +1,29 @@
+# Lint, test and do a real build from the committed snapshots on every push and pull request,
+# so a broken build shows up at push time instead of at the next scheduled crawl.
+name: ci
+
+on:
+  push:
+    branches: [main]
+    paths-ignore: ["snapshots/**"]   # the crawl bot's snapshot commits need no CI
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1   # v7.0.1
+      - uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d   # v10.0.1
+        with:
+          python-version: "3.12"
+          enable-cache: true
+      - run: uv sync --locked
+      - run: uv run ruff check .
+      - run: uv run ruff format --check .
+      - run: uv run pytest -q
+      - name: Build the site from the committed snapshots
+        run: uv run anvisa-feeds build --snapshots snapshots --site "$RUNNER_TEMP/site"

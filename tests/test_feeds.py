@@ -121,3 +121,20 @@ def test_discoverability_files_and_head_tags(client, tmp_path):
     assert ld["temporalCoverage"] == "2026-09-06/.."  # first snapshot ever
     assert ld["spatialCoverage"]["name"] == "Brasil" and ld["publisher"]["name"] == "anvisa-feeds"
     assert ld["distribution"][0]["contentUrl"] == "https://x.test/f/feeds.opml"
+
+
+def test_json_per_subfila_and_notice(client, tmp_path):
+    snapshots, site = tmp_path / "snapshots", tmp_path / "site"
+    crawl(client, snapshots, day=date(2026, 9, 6), areas=[8], log=lambda s: None)
+    next_day(snapshots, date(2026, 9, 6), date(2026, 9, 7))
+    build_site(
+        snapshots, site, base_url="https://x.test/f", base_tag="x.test,2026:f", notice="PAROU"
+    )
+    data = json.loads((site / "fila" / "167.json").read_text(encoding="utf-8"))
+    assert data["subfila"] == 167 and data["dia"] == "2026-09-07"
+    assert len(data["fila"]) == 39 and data["fila"][0]["posicao"] == 1
+    assert [e["type"] for e in data["mudancas"]].count("left") == 1
+    assert data["feed"] == "https://x.test/f/fila/167.xml"
+    for name in ("index.html", "fila/167.html"):
+        assert '<div class="box warn">PAROU</div>' in (site / name).read_text(encoding="utf-8")
+    assert 'href="167.json"' in (site / "fila" / "167.html").read_text(encoding="utf-8")

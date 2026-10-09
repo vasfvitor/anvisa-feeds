@@ -52,7 +52,10 @@ def build_cmd(
     base_url: str = typer.Option("https://anvisa.feeds.abelhaninja.de", help="site URL"),
     base_tag: str = typer.Option("anvisa.feeds.abelhaninja.de,2026:feeds", help="tag authority"),
     days: int = typer.Option(30, help="how many days of history each feed carries"),
+    notice: str | None = typer.Option(None, help="warning shown on every page (crawl failed)"),
 ) -> None:
     """Render index.html plus one Atom feed and one page per subfila from the snapshots."""
-    result = build_site(snapshots, site, base_url=base_url, base_tag=base_tag, days=days)
+    result = build_site(
+        snapshots, site, base_url=base_url, base_tag=base_tag, days=days, notice=notice
+    )
     typer.echo(json.dumps(result))

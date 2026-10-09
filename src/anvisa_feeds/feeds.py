@@ -56,6 +56,7 @@ align-items:center}
 .pill{display:inline-block;border:1px solid var(--line);border-radius:999px;padding:.1rem .6rem;
 font-size:.85em;color:var(--accent);background:var(--soft)}.pill:hover{text-decoration:none;
 border-color:var(--accent)}
+.box.warn{border-left-color:var(--down);font-weight:600}
 .box{background:var(--soft);border-left:3px solid var(--accent);padding:.75rem 1rem;margin:1rem 0;
 border-radius:0 4px 4px 0}
 .lead{font-size:1.05em;max-width:46rem}
@@ -361,7 +362,13 @@ def xml_bytes(root: ET.Element) -> bytes:
 
 
 def build_site(
-    snapshots: Path, site: Path, *, base_url: str, base_tag: str, days: int = 30
+    snapshots: Path,
+    site: Path,
+    *,
+    base_url: str,
+    base_tag: str,
+    days: int = 30,
+    notice: str | None = None,
 ) -> dict:
     """Write site/index.html, site/feed.xsl, site/fila/<id>.xml and site/fila/<id>.html."""
     all_days = snapshot_days(snapshots)
@@ -396,6 +403,8 @@ def build_site(
         + "."
     )
     org = {"@type": "Organization", "name": "anvisa-feeds", "url": REPO_URL}
+    # e.g. "today's crawl failed": shown on every page so a stale site says so, loudly
+    warn = f'<div class="box warn">{html.escape(notice)}</div>' if notice else ""
 
     for sub, days_events in history.items():
         name, grupo, area = describe(catalog, sub)
@@ -436,9 +445,29 @@ def build_site(
             f'<p class="meta"><span>{n} processos em {latest_day.isoformat()}</span>'
             f'<a class="pill" href="{sub}.xml" title="Cole este endereço no seu leitor de feeds">'
             f'Feed Atom</a><button class="pill copy" type="button" data-copy="{feed_url}" hidden>'
-            "Copiar endereço do feed</button></p>"
+            "Copiar endereço do feed</button>"
+            f'<a class="pill" href="{sub}.json" title="A fila de hoje em JSON">JSON</a></p>'
         )
-        body = f"<h2>Mudanças em {newest_day.isoformat()}</h2>"
+        (site / "fila" / f"{sub}.json").write_text(
+            json.dumps(
+                {
+                    "subfila": sub,
+                    "nome": name,
+                    "grupo": grupo,
+                    "area": area,
+                    "dia": latest_day.isoformat(),
+                    "coleta": meta["finished"],
+                    "pagina": f"{base_url}/fila/{sub}.html",
+                    "feed": feed_url,
+                    "mudancas": days_events[-1][1] if newest_day == latest_day else [],
+                    "fila": latest.get(sub, []),
+                },
+                ensure_ascii=False,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+        body = warn + f"<h2>Mudanças em {newest_day.isoformat()}</h2>"
         events, queue_block = entries[0]["content"], ""
         if n >= FILTER_MIN_ROWS:
             # the filter sits right above the table, so split the entry content around it
@@ -510,6 +539,7 @@ def build_site(
         "Acompanhe a posição do seu processo sem cadastro."
     )
     lines = [
+        warn,
         '<p class="lead">Snapshots diários das <strong>filas de análise da ANVISA</strong>, as '
         f"petições que aguardam análise, um feed Atom por subfila. {len(history)} filas; "
         f"última coleta em {latest_day.isoformat()}.</p>",
@@ -518,7 +548,8 @@ def build_site(
         "Para receber as mudanças, copie o endereço do <em>feed</em> e cole no seu leitor "
         "(Feedly, Inoreader, NetNewsWire, Thunderbird…); muitos leitores filtram por texto, "
         "então filtre pelo número do processo. Para assinar todas as filas de uma vez, importe "
-        'o <a href="feeds.opml">arquivo OPML</a>.</div>',
+        'o <a href="feeds.opml">arquivo OPML</a>. Cada fila também existe em JSON '
+        "(<code>fila/&lt;id&gt;.json</code>).</div>",
         '<nav class="toc" aria-label="Áreas">',
     ]
     for area in sorted(by_area):

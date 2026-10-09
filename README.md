@@ -24,14 +24,18 @@ time of the last successful fetch. It does not replace the official consulta.
    entry per subfila per day; its content lists the day's events and the queue as it stands.
    Feeds carry an XSL style sheet, so a browser shows a readable page instead of raw XML.
    Every page links its feed for reader auto-discovery and carries canonical, description and
-   Open Graph tags; the build also writes `sitemap.xml`, `robots.txt`, `feeds.opml` and a
-   schema.org `Dataset` block on the index.
+   Open Graph tags; the build also writes `sitemap.xml`, `robots.txt`, `feeds.opml`, a
+   schema.org `Dataset` block on the index, and `fila/<id>.json` with each subfila's queue
+   and the day's events for anyone who prefers data to HTML.
 4. The site is deployed to GitHub Pages from the workflow artifact. Git history is the
    changelog.
 
 The workflow is three jobs, crawl, build and deploy, so a rendering or deploy failure never
 loses a crawl; the snapshot is also kept as a workflow artifact for 90 days in case the push
-fails. "Run workflow" with `build_only` rebuilds the site without any requests.
+fails. If the crawl itself fails, the site is still rebuilt from the last good snapshot with a
+warning on every page (`build --notice`), so staleness is visible rather than silent. "Run
+workflow" with `build_only` rebuilds the site without any requests. A separate `ci` workflow
+lints, tests and builds on every push and pull request.
 
 A subfila with nothing queued answers an empty 404 and is recorded as empty. A day whose
 crawl failed for a subfila produces no events for it; absence of data is not a change. Every page carries the last successful fetch time, so a broken cron shows.

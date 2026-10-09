@@ -70,7 +70,9 @@ jobs:
 
   build:
     needs: crawl
-    if: ${{ always() && (needs.crawl.result == 'success' || needs.crawl.result == 'skipped') }}
+    # also after a failed crawl: the site is rebuilt from the last good snapshot with a notice,
+    # so a broken crawl is visible on the site instead of silently leaving it stale
+    if: ${{ always() && needs.crawl.result != 'cancelled' }}
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -83,7 +85,12 @@ jobs:
           enable-cache: true
       - run: uv sync --locked
       - name: Build the site
-        run: uv run anvisa-feeds build --snapshots snapshots --site site
+        run: |
+          extra=()
+          if [ "${{ needs.crawl.result }}" = "failure" ]; then
+            extra=(--notice "A coleta de hoje falhou; estes dados são da última coleta bem-sucedida.")
+          fi
+          uv run anvisa-feeds build --snapshots snapshots --site site "${extra[@]}"
       - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9   # v5.0.0
         with:
           path: site
