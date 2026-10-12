@@ -983,14 +983,9 @@
       "descricao": "PRODUTOS DE TERAPIA AVANÇADA",
       "grupo": 21
     },
-    "3047": {
-      "area": 1,
-      "descricao": "PRODUTOS DE TERAPIA AVANÇADA - Ensaio Clínico Classe I",
-      "grupo": 41
-    },
     "3048": {
       "area": 1,
-      "descricao": "PRODUTOS DE TERAPIA AVANÇADA - Ensaio Clínico Classe II",
+      "descricao": "PRODUTOS DE TERAPIA AVANÇADA - Ensaio Clínico",
       "grupo": 41
     },
     "3049": {
