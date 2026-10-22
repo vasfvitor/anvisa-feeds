@@ -1,0 +1,27 @@
+{
+  "stamp": "20261009",
+  "publicado_em": "09/10/2026 12:43:03",
+  "fetched": "2026-10-22T15:48:56.207578-03:00",
+  "rows": 26635,
+  "only_pmc": 0,
+  "only_pmvg": 0,
+  "files": [
+    {
+      "name": "TA_PRECO_MEDICAMENTO.csv",
+      "url": "https://dados.anvisa.gov.br/dados/TA_PRECO_MEDICAMENTO.csv",
+      "etag": "\"105a8a6-65d6a342ad836\"",
+      "last_modified": "Fri, 09 Oct 2026 15:43:03 GMT",
+      "bytes": 17148070,
+      "sha256": "e843e1ba8cbe781692101282ac4e7dee10ae66ad262a620aa03abc781918c7cf"
+    },
+    {
+      "name": "TA_PRECO_MEDICAMENTO_GOV.csv",
+      "url": "https://dados.anvisa.gov.br/dados/TA_PRECO_MEDICAMENTO_GOV.csv",
+      "etag": "\"10fc04a-65d6a358b7d85\"",
+      "last_modified": "Fri, 09 Oct 2026 15:43:26 GMT",
+      "bytes": 17809482,
+      "sha256": "5702701bdb1e78621945f7b232e90c377f23cba88a6bf35e16b9fab5b069affe"
+    }
+  ],
+  "release": "cmed-20261009"
+}
