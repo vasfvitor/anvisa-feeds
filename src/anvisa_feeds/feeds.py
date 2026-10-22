@@ -564,6 +564,24 @@ def build_site(
     (site / "robots.txt").write_text(
         f"User-agent: *\nAllow: /\nSitemap: {base_url}/sitemap.xml\n", encoding="utf-8"
     )
+    # 404.html: GitHub Pages serves it for any missing path, at any depth, so links are absolute
+    (site / "404.html").write_text(
+        page(
+            "Página não encontrada",
+            "<p>Este endereço não existe aqui. As filas estão na "
+            f'<a href="{base_url}/index.html">página inicial</a>, uma por subfila; os preços de '
+            f'medicamentos em <a href="{base_url}/cmed/index.html">Preços CMED</a>.</p>'
+            "<p>Um feed que sumiu? As subfilas da ANVISA mudam de id às vezes: procure o nome na "
+            "página inicial e assine de novo.</p>",
+            stamp=stamp,
+            url=f"{base_url}/404.html",
+            description="Página não encontrada.",
+            root=f"{base_url}/",
+            extra_head='<meta name="robots" content="noindex">',
+            nav=fila_nav(f"{base_url}/", cmed=bool(cmed)),
+        ),
+        encoding="utf-8",
+    )
 
     # index: área → grupo → subfila
     by_area: dict[str, dict[str, list[tuple[str, int]]]] = {}

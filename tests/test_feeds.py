@@ -74,6 +74,10 @@ def test_discoverability_files_and_head_tags(client, tmp_path):
     assert (site / "robots.txt").read_text() == (
         "User-agent: *\nAllow: /\nSitemap: https://x.test/f/sitemap.xml\n"
     )
+    missing = (site / "404.html").read_text(encoding="utf-8")
+    assert '<meta name="robots" content="noindex">' in missing
+    assert 'href="https://x.test/f/index.html"' in missing  # absolute: served at any depth
+    assert "não existe aqui" in missing
 
     sm = "{http://www.sitemaps.org/schemas/sitemap/0.9}"
     urls = ET.parse(site / "sitemap.xml").getroot().findall(f"{sm}url")
