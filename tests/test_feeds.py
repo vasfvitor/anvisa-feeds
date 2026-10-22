@@ -129,6 +129,12 @@ def test_discoverability_files_and_head_tags(client, tmp_path):
     assert summary["feeds"] == result["feeds"] and summary["first_snapshot"] == "2026-09-06"
     assert summary["catalog"]["subfilas"] == result["feeds"] and summary["catalog"]["areas"] == 1
     assert summary["base_url"] == "https://x.test/f"
+    # the day's movers: process 1 left subfila 167 (see next_day)
+    nov = summary["novidades"]
+    assert nov["dia"] == "2026-09-07" and nov["sairam"] == 1 and nov["entraram"] == 0
+    assert nov["filas_com_movimento"] == 1 and nov["filas"][0]["subfila"] == 167
+    assert nov["filas"][0]["pagina"] == "https://x.test/f/fila/167.html"
+    assert nov["filas"][0]["fila"] == 39 and nov["filas"][0]["sairam"] == 1
     assert summary["generator"].startswith("anvisa-feeds/")
 
 

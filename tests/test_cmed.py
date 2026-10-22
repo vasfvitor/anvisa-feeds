@@ -243,6 +243,16 @@ def test_second_month_diffs_and_groups(dados, client, tmp_path):
     newest = general.findall(f"{ATOM}entry")[0]
     assert newest.find(f"{ATOM}title").text == "Lista de 09/11/2026: 1 entrou, 2 mudaram, 1 saiu"
     assert "ZOLGENSMA" in newest.find(f"{ATOM}content").text
+    d = meta["destaques"]
+    assert d["altas"][0]["produto"] == "BAYCUTEN N" and d["altas"][0]["variacao"] == 10.0
+    assert d["altas"][0]["pf_de"] == 3073 and d["altas"][0]["pf_para"] == 3380
+    assert d["altas"][0]["pagina"].endswith(
+        "/cmed/substancia/21-acetato-de-dexametasona-clotrimazol.html"
+    )
+    assert [x["produto"] for x in d["entradas"]] == ["NOVO"]
+    assert [x["produto"] for x in d["saidas"]] == ["ZOLGENSMA"] and d["saidas"][0][
+        "pf_para"
+    ] is None
     index = (cmed_dir / "index.html").read_text(encoding="utf-8")
     assert "Maiores altas de PF" in index and "BAYCUTEN N" in index
     assert "NOVO" in index and "ZOLGENSMA" in index

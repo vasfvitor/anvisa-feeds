@@ -714,6 +714,36 @@ def build_site(
         "base_url": base_url,
         "generator": f"anvisa-feeds/{__version__}",
     }
+    # the day's busiest subfilas, for the hub's "what moved today": entries and exits only
+    movers = []
+    for sub, days_events in history.items():
+        day, events = days_events[-1]
+        if day != latest_day:
+            continue
+        entered = sum(1 for e in events if e["type"] == "entered")
+        left = sum(1 for e in events if e["type"] == "left")
+        if entered or left:
+            name, grupo, area = describe(catalog, sub)
+            movers.append(
+                {
+                    "subfila": sub,
+                    "nome": name,
+                    "grupo": grupo,
+                    "area": area,
+                    "entraram": entered,
+                    "sairam": left,
+                    "fila": len(latest.get(sub, [])),
+                    "pagina": f"{base_url}/fila/{sub}.html",
+                }
+            )
+    movers.sort(key=lambda m: (-(m["entraram"] + m["sairam"]), m["nome"]))
+    site_meta["novidades"] = {
+        "dia": latest_day.isoformat(),
+        "filas_com_movimento": len(movers),
+        "entraram": sum(m["entraram"] for m in movers),
+        "sairam": sum(m["sairam"] for m in movers),
+        "filas": movers[:10],
+    }
     if cmed:
         site_meta["cmed"] = {k: v for k, v in cmed.items() if k != "pages"}
     (site / "meta.json").write_text(

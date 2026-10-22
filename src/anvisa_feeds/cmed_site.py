@@ -655,7 +655,40 @@ def build_cmed(
         "first_stamp": known[0],
         "events": {k: counts[k] for k in ("entered", "changed", "left")},
         "release": RELEASE_TAG.format(stamp=latest_stamp),
+        "destaques": {
+            "altas": [highlight(m, subst_slug, base_url) for m in list(reversed(moves))[:5]],
+            "baixas": [highlight(m, subst_slug, base_url) for m in moves[:5]],
+            "entradas": [
+                highlight((e, None, e["row"].get("pf_0")), subst_slug, base_url)
+                for e in newest_events
+                if e["type"] == "entered"
+            ][:5],
+            "saidas": [
+                highlight((e, e["row"].get("pf_0"), None), subst_slug, base_url)
+                for e in newest_events
+                if e["type"] == "left"
+            ][:5],
+        },
         "pages": pages,
+    }
+
+
+def highlight(
+    move: tuple[dict, int | None, int | None], subst_slug: dict[str, str], base_url: str
+) -> dict:
+    """One presentation for the hub: what it is, the PF before and after, where to read more."""
+    e, old, new = move
+    r = e["row"]
+    s = r.get("substancia") or ""
+    return {
+        "produto": r.get("produto"),
+        "apresentacao": r.get("apresentacao"),
+        "substancia": s,
+        "laboratorio": r.get("laboratorio"),
+        "pf_de": old,
+        "pf_para": new,
+        "variacao": round((new - old) / old * 100, 1) if old and new is not None else None,
+        "pagina": f"{base_url}/cmed/substancia/{subst_slug[s]}.html" if s in subst_slug else None,
     }
 
 
