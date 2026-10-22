@@ -122,6 +122,15 @@ def test_discoverability_files_and_head_tags(client, tmp_path):
     assert ld["spatialCoverage"]["name"] == "Brasil" and ld["publisher"]["name"] == "anvisa-feeds"
     assert ld["distribution"][0]["contentUrl"] == "https://x.test/f/feeds.opml"
 
+    # meta.json: the latest day's meta plus totals, for other sites to read
+    summary = json.loads((site / "meta.json").read_text(encoding="utf-8"))
+    latest = load_meta(snapshots, date(2026, 9, 7))
+    assert {k: summary[k] for k in latest} == latest
+    assert summary["feeds"] == result["feeds"] and summary["first_snapshot"] == "2026-09-06"
+    assert summary["catalog"]["subfilas"] == result["feeds"] and summary["catalog"]["areas"] == 1
+    assert summary["base_url"] == "https://x.test/f"
+    assert summary["generator"].startswith("anvisa-feeds/")
+
 
 def test_json_per_subfila_and_notice(client, tmp_path):
     snapshots, site = tmp_path / "snapshots", tmp_path / "site"

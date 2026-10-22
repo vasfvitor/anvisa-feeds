@@ -649,4 +649,18 @@ def build_site(
                     htmlUrl=f"{base_url}/fila/{sub}.html",
                 )
     (site / "feeds.opml").write_bytes(xml_bytes(opml))
+
+    # meta.json: the latest crawl's meta plus catalog counts, for other sites (the hub) to read
+    # without walking fila/<id>.json. Same keys as snapshots/<day>.meta.json, plus the totals.
+    site_meta = {
+        **meta,
+        "feeds": len(history),
+        "first_snapshot": all_days[0].isoformat(),
+        "catalog": {k: len(catalog[k]) for k in ("areas", "grupos", "subfilas")},
+        "base_url": base_url,
+        "generator": f"anvisa-feeds/{__version__}",
+    }
+    (site / "meta.json").write_text(
+        json.dumps(site_meta, ensure_ascii=False, indent=1) + "\n", encoding="utf-8"
+    )
     return {"feeds": len(history), "days": len(window), "latest": latest_day.isoformat()}

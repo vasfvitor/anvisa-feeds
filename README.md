@@ -23,6 +23,8 @@ time of the last successful fetch. It does not replace the official consulta.
    `site/`: `index.html`, and `fila/<id>.xml` + `fila/<id>.html` for every subfila. One feed
    entry per subfila per day; its content lists the day's events and the queue as it stands.
    Feeds carry an XSL style sheet, so a browser shows a readable page instead of raw XML.
+   The root also gets `meta.json`: the latest crawl's counts and timings plus the catalog
+   totals, for other sites to read.
    Every page links its feed for reader auto-discovery and carries canonical, description and
    Open Graph tags; the build also writes `sitemap.xml`, `robots.txt`, `feeds.opml`, a
    schema.org `Dataset` block on the index, and `fila/<id>.json` with each subfila's queue
