@@ -9,6 +9,7 @@ from pathlib import Path
 import typer
 from anvisa.cli import handle_errors, make_client
 
+from .cmed import crawl as crawl_cmed
 from .crawl import crawl
 from .feeds import build_site
 
@@ -53,9 +54,30 @@ def build_cmd(
     base_tag: str = typer.Option("anvisa.feeds.abelhaninja.de,2026:feeds", help="tag authority"),
     days: int = typer.Option(30, help="how many days of history each feed carries"),
     notice: str | None = typer.Option(None, help="warning shown on every page (crawl failed)"),
+    cmed_snapshots: Path = typer.Option(Path("snapshots/cmed"), help="CMED monthly snapshots"),
+    cmed_months: int = typer.Option(12, help="how many months of history each CMED feed carries"),
 ) -> None:
-    """Render index.html plus one Atom feed and one page per subfila from the snapshots."""
+    """Render index.html plus one Atom feed and one page per subfila from the snapshots, and
+    the CMED pages when there are CMED snapshots."""
     result = build_site(
-        snapshots, site, base_url=base_url, base_tag=base_tag, days=days, notice=notice
+        snapshots,
+        site,
+        base_url=base_url,
+        base_tag=base_tag,
+        days=days,
+        notice=notice,
+        cmed_snapshots=cmed_snapshots,
+        cmed_months=cmed_months,
     )
     typer.echo(json.dumps(result))
+
+
+@app.command("crawl-cmed")
+def crawl_cmed_cmd(
+    snapshots: Path = typer.Option(Path("snapshots/cmed"), help="where CMED snapshots go"),
+    raw_dir: Path = typer.Option(Path("raw/cmed"), help="where the month's two CSVs are kept"),
+) -> None:
+    """Fetch CMED's price list when it changed (two conditional GETs, no credentials) and
+    write the month's snapshot. Prints the meta, or {"unchanged": true}."""
+    meta = crawl_cmed(snapshots, raw_dir=raw_dir, log=lambda s: typer.echo(s, err=True))
+    typer.echo(json.dumps(meta if meta else {"unchanged": True}, ensure_ascii=False))

@@ -16,6 +16,17 @@ format; a git-ignored `NOTES.local.md` holds pending items when present.
 - The catalog is re-walked on Mondays only (`crawl.py`); other days cost about 314 requests.
   The API bucket (burst 25, refill 1/s) is shared per source address with the library's own
   snapshot tooling and the unauthenticated portal endpoints.
+- The second feed family is CMED's monthly price list (`cmed.py`, `cmed_site.py`, pages under
+  `site/cmed/`). No credentials: two conditional GETs a day on dados.anvisa.gov.br, parsed by
+  `anvisa.dados.cmed` from the library (hence `anvisa>=0.7.0`). Snapshots live in
+  `snapshots/cmed/<stamp>.jsonl.xz` (arrays under a `columns` line; a month is about 3 MB),
+  invisible to the fila globs, which read `snapshots/*.jsonl.gz` only. The raw CSVs of a month
+  go to the GitHub Release `cmed-<stamp>` (the workflow's cmed job), never to git; `raw/` is
+  ignored. `base_tag` never changes: CMED feed ids are `tag:…:cmed/substancia/<slug>` and
+  `tag:…:cmed/laboratorio/<cnpj>`.
+- Site size: the CMED pages are about 7,600 files and 100 MB (2,264 substâncias and 262
+  laboratórios, each with .xml, .html and .json). The JSON carries `cmed_site.JSON_FIELDS`
+  only; the full 102 columns are the `cmed` Parquet of anvisa-api.
 
 ## SEO
 

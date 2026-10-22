@@ -1,3 +1,6 @@
 * text=auto eol=lf
 *.gz binary
 *.png binary
+*.xz binary
+# CMED samples are cut byte for byte from ANVISA (UTF-8 BOM, CRLF): never normalize
+tests/fixtures/cmed/*.csv -text

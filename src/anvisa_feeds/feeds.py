@@ -257,7 +257,15 @@ def filter_box(target: str, items: str, placeholder: str) -> str:
 
 
 def atom_feed(
-    *, feed_id: str, title: str, self_url: str, alt_url: str, updated: str, entries: list[dict]
+    *,
+    feed_id: str,
+    title: str,
+    self_url: str,
+    alt_url: str,
+    updated: str,
+    entries: list[dict],
+    xsl_href: str = "../feed.xsl",
+    author: str = "anvisa-feeds (dados: ANVISA)",
 ) -> bytes:
     feed = ET.Element("feed", xmlns=ATOM)
     ET.SubElement(feed, "id").text = feed_id
@@ -266,7 +274,7 @@ def atom_feed(
     ET.SubElement(feed, "link", rel="self", href=self_url)
     ET.SubElement(feed, "link", rel="alternate", href=alt_url)
     ET.SubElement(feed, "generator", version=__version__).text = "anvisa-feeds"
-    ET.SubElement(ET.SubElement(feed, "author"), "name").text = "anvisa-feeds (dados: ANVISA)"
+    ET.SubElement(ET.SubElement(feed, "author"), "name").text = author
     for e in entries:
         entry = ET.SubElement(feed, "entry")
         ET.SubElement(entry, "id").text = e["id"]
@@ -279,9 +287,18 @@ def atom_feed(
     # Firefox does not support (it would print the tags as text).
     return (
         b'<?xml version="1.0" encoding="utf-8"?>\n'
-        b'<?xml-stylesheet type="text/xsl" href="../feed.xsl"?>\n'
+        + f'<?xml-stylesheet type="text/xsl" href="{xsl_href}"?>\n'.encode()
         + ET.tostring(feed, encoding="unicode").encode("utf-8")
     )
+
+
+def fila_nav(root: str, *, cmed: bool) -> list[tuple[str, str]]:
+    """The header links of the fila pages; the CMED one only once there are CMED pages."""
+    links = [(f"{root}index.html", "Todas as filas")]
+    if cmed:
+        links.append((f"{root}cmed/index.html", "Preços CMED"))
+    links.append((f"{root}feeds.opml", "OPML"))
+    return links
 
 
 def page(
@@ -295,10 +312,13 @@ def page(
     feed_url: str | None = None,
     extra_head: str = "",
     heading: str | None = None,
+    nav: list[tuple[str, str]] | None = None,
+    provenance: str | None = None,
 ) -> str:
     """The one HTML template. `url` is the canonical address; `feed_url` makes readers find the
     Atom feed from the page; `extra_head` is for JSON-LD; `root` is the relative path to the
-    site root ('' on the index, '../' under fila/)."""
+    site root ('' on the index, '../' under fila/). `nav` replaces the header links (the fila
+    ones by default) and `provenance` the footer's data sentence, for the CMED pages."""
     head = [
         '<!doctype html><html lang="pt-BR"><head><meta charset="utf-8">',
         '<meta name="viewport" content="width=device-width,initial-scale=1">',
@@ -325,18 +345,20 @@ def page(
         extra_head,
         f"<style>{CSS}</style></head><body>",
     ]
+    if nav is None:
+        nav = fila_nav(root, cmed=False)
+    links = "".join(f'<a href="{q(href)}">{html.escape(text)}</a>' for href, text in nav)
     header = (
         f'<header class="site"><div class="wrap"><a class="name" href="{root}index.html">'
-        f"{SITE_NAME}</a><nav>"
-        f'<a href="{root}index.html">Todas as filas</a>'
-        f'<a href="{root}feeds.opml" title="Assinar todas as filas de uma vez">OPML</a>'
+        f"{SITE_NAME}</a><nav>{links}"
         f'<a href="{REPO_URL}">GitHub</a></nav></div></header>'
     )
-    footer = (
-        f'<footer><div class="wrap"><p>{stamp}</p>'
-        "<p>Dados da ANVISA (API Consultas Externas), reproduzidos sem alteração. "
-        "Não substitui a consulta oficial em consultas.anvisa.gov.br.</p></div></footer>"
-    )
+    if provenance is None:
+        provenance = (
+            "Dados da ANVISA (API Consultas Externas), reproduzidos sem alteração. "
+            "Não substitui a consulta oficial em consultas.anvisa.gov.br."
+        )
+    footer = f'<footer><div class="wrap"><p>{stamp}</p><p>{provenance}</p></div></footer>'
     return (
         "".join(head)
         + header
@@ -369,8 +391,13 @@ def build_site(
     base_tag: str,
     days: int = 30,
     notice: str | None = None,
+    cmed_snapshots: Path | None = None,
+    cmed_months: int = 12,
 ) -> dict:
-    """Write site/index.html, site/feed.xsl, site/fila/<id>.xml and site/fila/<id>.html."""
+    """Write site/index.html, site/feed.xsl, site/fila/<id>.xml and site/fila/<id>.html, and
+    with CMED snapshots in `cmed_snapshots` (default `snapshots/cmed`) the site/cmed/ pages."""
+    from .cmed_site import build_cmed  # imports this module: resolved at call time
+
     all_days = snapshot_days(snapshots)
     window = all_days[-(days + 1) :]
     if not window:
@@ -405,6 +432,12 @@ def build_site(
     org = {"@type": "Organization", "name": "anvisa-feeds", "url": REPO_URL}
     # e.g. "today's crawl failed": shown on every page so a stale site says so, loudly
     warn = f'<div class="box warn">{html.escape(notice)}</div>' if notice else ""
+
+    # the CMED pages, when there are CMED snapshots: their own index, feeds and OPML
+    cmed_dir = Path(cmed_snapshots) if cmed_snapshots else Path(snapshots) / "cmed"
+    cmed = build_cmed(
+        cmed_dir, site, base_url=base_url, base_tag=base_tag, months=cmed_months, warn=warn
+    )
 
     for sub, days_events in history.items():
         name, grupo, area = describe(catalog, sub)
@@ -513,16 +546,20 @@ def build_site(
                 feed_url=f"{base_url}/fila/{sub}.xml",
                 extra_head=json_ld(crumbs),
                 heading=heading,
+                nav=fila_nav("../", cmed=bool(cmed)),
             ),
             encoding="utf-8",
         )
 
     # sitemap: the HTML pages only (feeds are not pages); lastmod is the real fetch time
     urlset = ET.Element("urlset", xmlns=SITEMAP)
-    for loc in [f"{base_url}/"] + [f"{base_url}/fila/{sub}.html" for sub in sorted(history)]:
+    pages = [(f"{base_url}/", meta["finished"])]
+    pages += [(f"{base_url}/fila/{sub}.html", meta["finished"]) for sub in sorted(history)]
+    pages += cmed["pages"] if cmed else []
+    for loc, lastmod in pages:
         u = ET.SubElement(urlset, "url")
         ET.SubElement(u, "loc").text = loc
-        ET.SubElement(u, "lastmod").text = meta["finished"]
+        ET.SubElement(u, "lastmod").text = lastmod
     (site / "sitemap.xml").write_bytes(xml_bytes(urlset))
     (site / "robots.txt").write_text(
         f"User-agent: *\nAllow: /\nSitemap: {base_url}/sitemap.xml\n", encoding="utf-8"
@@ -550,8 +587,14 @@ def build_site(
         "então filtre pelo número do processo. Para assinar todas as filas de uma vez, importe "
         'o <a href="feeds.opml">arquivo OPML</a>. Cada fila também existe em JSON '
         "(<code>fila/&lt;id&gt;.json</code>).</div>",
-        '<nav class="toc" aria-label="Áreas">',
     ]
+    if cmed:
+        lines.append(
+            '<p class="lead">Também aqui: os <a href="cmed/index.html">preços máximos de '
+            "medicamentos da CMED</a>, a lista mensal em feeds por substância e por "
+            f"laboratório; última lista de {cmed['publicado_em'][:10]}.</p>"
+        )
+    lines.append('<nav class="toc" aria-label="Áreas">')
     for area in sorted(by_area):
         count = sum(len(v) for v in by_area[area].values())
         lines.append(
@@ -588,6 +631,16 @@ def build_site(
         "<p>São a diferença entre o snapshot de hoje e o de ontem para aquela subfila. "
         "“Saiu da fila” quer dizer que o processo não aparece mais na fila de análise; "
         "o resultado da análise só está na consulta oficial.</p>",
+        *(
+            [
+                "<h3>E os preços dos medicamentos?</h3>",
+                '<p>A lista mensal da CMED está em <a href="cmed/index.html">Preços CMED</a>, '
+                "com um feed por substância e por laboratório que diz o que entrou, saiu e "
+                "mudou de preço a cada lista.</p>",
+            ]
+            if cmed
+            else []
+        ),
         "<h3>Isto é um serviço da ANVISA?</h3>",
         f'<p>Não. É um projeto independente e de <a href="{REPO_URL}">código aberto</a> que '
         "republica os dados públicos da ANVISA sem alteração. Não substitui a consulta oficial "
@@ -627,6 +680,7 @@ def build_site(
             description=index_description,
             root="",
             extra_head=json_ld(dataset),
+            nav=fila_nav("", cmed=bool(cmed)),
         ),
         encoding="utf-8",
     )
@@ -660,7 +714,12 @@ def build_site(
         "base_url": base_url,
         "generator": f"anvisa-feeds/{__version__}",
     }
+    if cmed:
+        site_meta["cmed"] = {k: v for k, v in cmed.items() if k != "pages"}
     (site / "meta.json").write_text(
         json.dumps(site_meta, ensure_ascii=False, indent=1) + "\n", encoding="utf-8"
     )
-    return {"feeds": len(history), "days": len(window), "latest": latest_day.isoformat()}
+    result = {"feeds": len(history), "days": len(window), "latest": latest_day.isoformat()}
+    if cmed:
+        result["cmed"] = {k: cmed[k] for k in ("stamp", "feeds", "months")}
+    return result

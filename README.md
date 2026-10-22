@@ -32,7 +32,7 @@ time of the last successful fetch. It does not replace the official consulta.
 4. The site is deployed to GitHub Pages from the workflow artifact. Git history is the
    changelog.
 
-The workflow is three jobs, crawl, build and deploy, so a rendering or deploy failure never
+The workflow is four jobs, crawl, cmed, build and deploy, so a rendering or deploy failure never
 loses a crawl; the snapshot is also kept as a workflow artifact for 90 days in case the push
 fails. If the crawl itself fails, the site is still rebuilt from the last good snapshot with a
 warning on every page (`build --notice`), so staleness is visible rather than silent. "Run
@@ -42,6 +42,31 @@ lints, tests and builds on every push and pull request.
 A subfila with nothing queued answers an empty 404 and is recorded as empty. A day whose
 crawl failed for a subfila produces no events for it; absence of data is not a change. Every page carries the last successful fetch time, so a broken cron shows.
 
+## Preços CMED
+
+The same site also carries **CMED's monthly price list** (the maximum prices of every medicine
+presentation: PF, PMC and PMVG per ICMS rate), at **<https://anvisa.feeds.abelhaninja.de/cmed/>**,
+as one Atom feed per substância, one per laboratório and a general one. An entry is one
+month's list diffed against the previous one: what entered, what left, what changed price or
+anything else. It works like the filas, with a month instead of a day:
+
+1. `anvisa-feeds crawl-cmed` runs daily in the `cmed` job: two conditional GETs on the two
+   CSVs ANVISA republishes on dados.anvisa.gov.br (`TA_PRECO_MEDICAMENTO.csv`, PF + PMC, and
+   `TA_PRECO_MEDICAMENTO_GOV.csv`, PF + PMVG; no credentials). When either changed, both are
+   read and merged by GGREM with `anvisa.dados.cmed` (the same code that builds the `cmed`
+   Parquet of [anvisa-api](https://github.com/vasfvitor/anvisa-api)), and the month is written
+   to `snapshots/cmed/<stamp>.jsonl.xz` plus `<stamp>.meta.json`, the stamp being the files'
+   Last-Modified day. The raw CSVs go to the GitHub Release `cmed-<stamp>`, not to git.
+2. `build` diffs consecutive months (`diff_keyed`: entered, left, changed with the fields
+   that differ) and writes `site/cmed/`: `index.html` (the month's biggest PF moves, entries
+   and exits, every substância and laboratório), `geral.xml`, `substancia/<slug>.{xml,html,json}`
+   and `laboratorio/<cnpj>.{xml,html,json}`, `cmed.opml` and `feed.xsl`. Prices on the pages
+   are PF, PMC and PMVG at ICMS 0 %; the JSON carries a short subset of columns, the Parquet
+   all 102. Without CMED snapshots the build is the fila site alone.
+
+CMED readjusts the list once a year, in March or April: that month almost every presentation
+changes. The pages say so.
+
 ## Running it yourself
 
 ```bash
@@ -49,6 +74,7 @@ uv sync
 export ANVISA_CLIENT_ID=... ANVISA_CLIENT_SECRET=...   # or ~/.config/anvisa/credentials.env
 uv run anvisa-feeds crawl --area 8                    # a smoke test: one área
 uv run anvisa-feeds crawl                             # everything
+uv run anvisa-feeds crawl-cmed                        # the price list, when it changed (no credentials)
 uv run anvisa-feeds build && python -m http.server -d site
 uv run pytest                                          # fixture-only, no network
 ```
@@ -63,4 +89,14 @@ One per crawled subfila; an empty `rows` means crawled and nothing queued.
    "expediente": "...", "assunto": "...", "dsAssunto": "...", "entrada": "2026-08-18"}]}
 ```
 
-Not affiliated with ANVISA. MIT.
+A CMED month (`snapshots/cmed/<stamp>.jsonl.xz`) starts with a line naming the columns, then
+one JSON array per presentation in that order, the merged row of `anvisa.dados.cmed`
+(`ggrem`, `registro`, `registro_produto`, substância, laboratório, the 78 prices as integer
+centavos, flags as `S`/`N`, `publicado_em`):
+
+```json
+{"columns": ["ggrem", "registro", "registro_produto", "substancia", "cnpj", "laboratorio", "..."]}
+["538912020009303", "1705600230032", "170560023", "21-ACETATO DE DEXAMETASONA;CLOTRIMAZOL", "18459628000115", "BAYER S.A.", "..."]
+```
+
+Not affiliated with ANVISA or CMED. MIT.

@@ -5,9 +5,11 @@ description: SEO and feed-discoverability rules for the anvisa-feeds static site
 
 # feeds-seo
 
-The site is ~314 generated pages (one per ANVISA subfila) plus one Atom feed each, rebuilt daily.
-Two audiences find it: people googling a subfila name or their own process number, and feed
-readers that auto-detect a feed from an HTML URL. Every rule below serves one of those two.
+The site is ~314 generated pages (one per ANVISA subfila) plus one Atom feed each, rebuilt daily,
+and since 2026-10-22 a second family under `cmed/`: ~2,500 pages (one per substância and per
+laboratório of CMED's monthly price list) plus one feed each and a general one (`cmed_site.py`).
+Two audiences find it: people googling a subfila name, a medicine or their own process number,
+and feed readers that auto-detect a feed from an HTML URL. Every rule below serves one of those two.
 For generic checks (headers, Lighthouse, hreflang) defer to the general `seo` skill.
 
 ## Site facts
@@ -42,11 +44,13 @@ For generic checks (headers, Lighthouse, hreflang) defer to the general `seo` sk
 
 | File | Rule |
 |---|---|
-| `sitemap.xml` | index + every `fila/{id}.html`; `lastmod` = `meta["finished"]`. Feeds (`.xml`) are not pages and are not listed. |
+| `sitemap.xml` | index + every `fila/{id}.html` (`lastmod` = `meta["finished"]`) + `cmed/` + every `cmed/substancia/{slug}.html` and `cmed/laboratorio/{cnpj}.html` (`lastmod` = the CMED meta's `fetched`). Feeds (`.xml`) are not pages and are not listed. |
 | `robots.txt` | `User-agent: *` / `Allow: /` / `Sitemap: {base_url}/sitemap.xml`. |
-| `feeds.opml` | OPML 2.0, área → grupo → subfila outlines, `type="rss"`, `xmlUrl` and `htmlUrl` absolute. |
-| `feed.xsl` | keeps feeds readable in a browser: explanation box plus entry titles as links. Never use `disable-output-escaping` (Firefox prints the tags as text). Do not remove the `xml-stylesheet` PI. |
-| `fila/<id>.json` | the subfila's queue and the day's events as data; linked from the page's meta line, not in the sitemap. |
+| `feeds.opml` | OPML 2.0, área → grupo → subfila outlines, `type="rss"`, `xmlUrl` and `htmlUrl` absolute. Filas only: `cmed/cmed.opml` is a separate file (geral, then substâncias, then laboratórios), so "subscribe to every fila" stays small. |
+| `feed.xsl` | keeps feeds readable in a browser: explanation box plus entry titles as links. Never use `disable-output-escaping` (Firefox prints the tags as text). Do not remove the `xml-stylesheet` PI. `cmed/feed.xsl` is the same sheet with CMED wording and absolute links (the CMED feeds sit at two depths; `atom_feed(xsl_href=…)`). |
+| `fila/<id>.json` | the subfila's queue and the day's events as data; linked from the page's meta line, not in the sitemap. `cmed/…/<id>.json` likewise, with `cmed_site.JSON_FIELDS` per presentation. |
+| `meta.json` | the latest fila crawl plus catalog totals at the top level, and a `cmed` key (stamp, rows, counts, events) when there are CMED snapshots; read by anvisa-hub. |
+| CMED pages | `<title>` is `{name} · Preços CMED`; header nav is Preços CMED › Todas as filas › OPML; the footer provenance names CMED and dados.anvisa.gov.br, not the API. `cmed/` has its own `Dataset` JSON-LD; group pages a two-item `BreadcrumbList`. |
 | notice | `build --notice "…"` renders a red `.box.warn` on every page; crawl.yml passes it when the crawl job failed. |
 | index JSON-LD | one `Dataset` block; shape in `references/structured-data.md`. |
 | fila JSON-LD | one `BreadcrumbList` (Filas › área › grupo › subfila); área/grupo items point at index anchors `#<area-slug>` and `#<area-slug>--<grupo-slug>`, which must exist. |

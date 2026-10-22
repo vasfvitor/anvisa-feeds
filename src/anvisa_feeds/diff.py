@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from collections import Counter
+from collections.abc import Sequence
 
 FAR = 10**9  # sorts events without a current position (left) after everything else
 ORDER = {"entered": 0, "moved": 1, "left": 2}
@@ -59,4 +60,42 @@ def diff_snapshots(
 def summary(events: list[dict]) -> str:
     counts = Counter(e["type"] for e in events)
     parts = [f"{n} {one if n == 1 else many}" for kind, one, many in WORDS if (n := counts[kind])]
+    return ", ".join(parts) or "sem mudanças"
+
+
+# --- keyed rows with values (the CMED list) ---------------------------------------------------
+
+KEYED_ORDER = {"entered": 0, "changed": 1, "left": 2}
+KEYED_WORDS = [
+    ("entered", "entrou", "entraram"),
+    ("changed", "mudou", "mudaram"),
+    ("left", "saiu", "saíram"),
+]
+
+
+def diff_keyed(prev: dict[str, dict], curr: dict[str, dict], fields: Sequence[str]) -> list[dict]:
+    """Events between two row sets keyed by an id: `entered` (key only in `curr`), `left`
+    (only in `prev`, with the old row) and `changed` (in both, with at least one of `fields`
+    different; `changes` maps each such field to `[old, new]`). Sorted by key."""
+    events = []
+    for k in sorted(curr.keys() | prev.keys()):
+        new, old = curr.get(k), prev.get(k)
+        if old is None:
+            events.append({"type": "entered", "key": k, "row": new, "old": None, "changes": {}})
+        elif new is None:
+            events.append({"type": "left", "key": k, "row": old, "old": old, "changes": {}})
+        else:
+            changes = {f: [old.get(f), new.get(f)] for f in fields if old.get(f) != new.get(f)}
+            if changes:
+                events.append(
+                    {"type": "changed", "key": k, "row": new, "old": old, "changes": changes}
+                )
+    return events
+
+
+def summary_keyed(events: list[dict]) -> str:
+    counts = Counter(e["type"] for e in events)
+    parts = [
+        f"{n} {one if n == 1 else many}" for kind, one, many in KEYED_WORDS if (n := counts[kind])
+    ]
     return ", ".join(parts) or "sem mudanças"
