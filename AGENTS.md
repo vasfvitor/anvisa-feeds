@@ -24,6 +24,12 @@ format; a git-ignored `NOTES.local.md` holds pending items when present.
   go to the GitHub Release `cmed-<stamp>` (the workflow's cmed job), never to git; `raw/` is
   ignored. `base_tag` never changes: CMED feed ids are `tag:…:cmed/substancia/<slug>` and
   `tag:…:cmed/laboratorio/<cnpj>`.
+- `site/cmed/dados/` (`cmed_dados.py`) is the data contract with the public portal
+  (`vasfvitor/portal-saude`): `produtos.json` (index) and `produto/<registro_produto>.json` with
+  the PMC of each presentation at every ICMS rate, in centavos, pharmacy presentations only
+  (about 7,600 files, 15 MB); the schema is `cmed_dados_schema.md`, published as
+  `dados/schema.md`. A key change there needs a follow-up in the portal. Its count is kept out
+  of `meta.json` on purpose (that file is anvisa-hub's contract).
 - Site size: the CMED pages are about 7,600 files and 100 MB (2,264 substâncias and 262
   laboratórios, each with .xml, .html and .json). The JSON carries `cmed_site.JSON_FIELDS`
   only; the full 102 columns are the `cmed` Parquet of anvisa-api.

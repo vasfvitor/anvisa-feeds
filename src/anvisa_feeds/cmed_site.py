@@ -21,6 +21,7 @@ from anvisa.dados import cmed as reader
 
 from . import feeds
 from .cmed import RELEASE_TAG, load_meta, load_rows, stamps
+from .cmed_dados import write_dados
 from .diff import diff_keyed, summary_keyed
 
 TITLE = "Preços CMED"
@@ -642,6 +643,9 @@ def build_cmed(
             htmlUrl=f"{base_url}/cmed/laboratorio/{cnpj}.html",
         )
     (out / "cmed.opml").write_bytes(feeds.xml_bytes(opml))
+    # data for the public portal: one JSON per product with the PMC at every ICMS rate
+    # (meta.json is a contract with anvisa-hub: the count is not added to the returned block)
+    write_dados(out, latest, stamp=latest_stamp, publicado_em=meta["publicado_em"])
 
     return {
         "stamp": latest_stamp,
