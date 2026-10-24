@@ -1,0 +1,17 @@
+{
+  "date": "2026-10-24",
+  "started": "2026-10-24T10:05:05.601616-03:00",
+  "finished": "2026-10-24T10:11:36.425012-03:00",
+  "seconds": 391,
+  "catalog_refreshed": false,
+  "requests": 318,
+  "rows": 9797,
+  "subfilas_total": 318,
+  "subfilas_crawled": 317,
+  "failed": [
+    {
+      "subfila": 804,
+      "error": "ReadTimeout: The read operation timed out"
+    }
+  ]
+}
