@@ -1,5 +1,7 @@
 """CMED data for the public portal: one JSON per product (registro_produto) with the maximum
-consumer price (PMC) of each presentation at every ICMS rate, plus a search index and the schema.
+consumer price (PMC) of each presentation at every ICMS rate, the same products in one file
+(todos.json, so the portal build makes one request instead of thousands), a search index and the
+schema.
 
 Only presentations sold in pharmacies (with some PMC) go in; hospital-only ones have no PMC. Prices
 stay as the list gives them, in centavos. Written under site/cmed/dados/ by build_cmed.
@@ -98,8 +100,8 @@ def _compact(obj: object) -> str:
 
 
 def write_dados(out: Path, rows: dict[str, dict], *, stamp: str, publicado_em: str) -> int:
-    """Write out/dados/{produtos.json, produto/<registro_produto>.json, schema.md}; returns the
-    number of products."""
+    """Write out/dados/{produtos.json, todos.json, produto/<registro_produto>.json, schema.md};
+    returns the number of products."""
     lista = produtos(rows, stamp=stamp, publicado_em=publicado_em)
     pasta = Path(out) / "dados" / "produto"
     pasta.mkdir(parents=True, exist_ok=True)
@@ -108,5 +110,7 @@ def write_dados(out: Path, rows: dict[str, dict], *, stamp: str, publicado_em: s
     (pasta.parent / "produtos.json").write_text(
         _compact(indice(lista, stamp=stamp, publicado_em=publicado_em)), encoding="utf-8"
     )
+    todos = {"stamp": stamp, "publicado_em": publicado_em, "produtos": lista}
+    (pasta.parent / "todos.json").write_text(_compact(todos), encoding="utf-8")
     (pasta.parent / "schema.md").write_text(SCHEMA.read_text(encoding="utf-8"), encoding="utf-8")
     return len(lista)

@@ -45,6 +45,19 @@ def test_products_hold_every_pharmacy_presentation(dados, client, tmp_path):  # 
     assert (pasta / "schema.md").read_text(encoding="utf-8").startswith("# Preços máximos")
 
 
+def test_todos_holds_the_same_products_as_the_files(dados, client, tmp_path):  # noqa: F811
+    _, site, _ = site_with_months(dados, client, tmp_path, 1)
+    pasta = site / "cmed" / "dados"
+    idx = read(pasta / "produtos.json")
+    todos = read(pasta / "todos.json")
+    assert (todos["stamp"], todos["publicado_em"]) == (idx["stamp"], idx["publicado_em"])
+    assert [p["registro_produto"] for p in todos["produtos"]] == [
+        i["registro_produto"] for i in idx["produtos"]
+    ]
+    for p in todos["produtos"]:
+        assert p == read(pasta / "produto" / f"{p['registro_produto']}.json")
+
+
 def test_meta_contract_is_unchanged(dados, client, tmp_path):  # noqa: F811
     _, site, _ = site_with_months(dados, client, tmp_path, 1)
     bloco = read(site / "meta.json")["cmed"]

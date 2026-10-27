@@ -27,7 +27,8 @@ format; a git-ignored `NOTES.local.md` holds pending items when present.
 - `site/cmed/dados/` (`cmed_dados.py`) is the data contract with the public portal
   (`vasfvitor/portal-saude`): `produtos.json` (index) and `produto/<registro_produto>.json` with
   the PMC of each presentation at every ICMS rate, in centavos, pharmacy presentations only
-  (about 7,600 files, 15 MB); the schema is `cmed_dados_schema.md`, published as
+  (about 7,600 files, 15 MB), plus `todos.json` with every product in one file (13 MB), which
+  is what the portal build reads (thousands of requests made GitHub Pages answer 429); the schema is `cmed_dados_schema.md`, published as
   `dados/schema.md`. A key change there needs a follow-up in the portal. Its count is kept out
   of `meta.json` on purpose (that file is anvisa-hub's contract).
 - Site size: the CMED pages are about 7,600 files and 100 MB (2,264 substâncias and 262

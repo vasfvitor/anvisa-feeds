@@ -34,5 +34,12 @@ Os campos do índice, mais `cnpj`, `classe_terapeutica`, `tarja`, `stamp`, `publ
 | `pmc` | preço máximo ao consumidor por alíquota de ICMS: `{"0": c, "12": c, "17": c, "17.5": c, …}` em centavos |
 | `pmc_alc` | o mesmo para Áreas de Livre Comércio (sem a alíquota 0) |
 
+## `todos.json`
+
+`{stamp, publicado_em, produtos: [...]}`, em que cada item é exatamente o conteúdo do
+`produto/<registro_produto>.json` correspondente, na ordem do índice. É para quem precisa de tudo de
+uma vez (cerca de 13 MB, menos de 3 MB comprimido na entrega); para um remédio só, use o arquivo
+individual.
+
 A alíquota que vale depende do estado onde o remédio é vendido e, às vezes, do tipo de produto; a
 lista da CMED não diz qual estado usa qual alíquota.
