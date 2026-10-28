@@ -21,6 +21,7 @@ from xml.etree import ElementTree as ET
 from . import __version__
 from .crawl import describe, load_catalog, load_meta, load_snapshot, snapshot_days
 from .diff import diff_snapshots, summary
+from .situacao import Situacao
 
 ATOM = "http://www.w3.org/2005/Atom"
 SITEMAP = "http://www.sitemaps.org/schemas/sitemap/0.9"
@@ -393,7 +394,7 @@ def build_site(
     notice: str | None = None,
     cmed_snapshots: Path | None = None,
     cmed_months: int = 12,
-    situacao: dict[str, dict] | None = None,
+    situacao: Situacao | None = None,
 ) -> dict:
     """Write site/index.html, site/feed.xsl, site/fila/<id>.xml and site/fila/<id>.html, and
     with CMED snapshots in `cmed_snapshots` (default `snapshots/cmed`) the site/cmed/ pages.
@@ -413,17 +414,33 @@ def build_site(
     # rolling pair of days: events per subfila per day, oldest first; only the latest queues kept
     history: dict[int, list[tuple[date, list[dict]]]] = {}
     prev: dict[int, list[dict]] | None = None
+    # the last day each subfila was actually collected, with its queue
+    collected: dict[int, tuple[date, list[dict]]] = {}
     for day in window:
         curr = load_snapshot(snapshots, day)
         if prev is not None:
             for sub, events in diff_snapshots(prev, curr).items():
                 history.setdefault(sub, []).append((day, events))
+        collected.update({sub: (day, rows) for sub, rows in curr.items()})
         prev = curr
     latest_day, latest = window[-1], prev or {}
     for sub in latest:
         history.setdefault(sub, [(latest_day, [])])  # seen only on the latest day
 
     meta = metas[latest_day]
+    # a subfila the latest crawl failed on is not empty: it was not collected, and its pages say
+    # so with the last queue that was, instead of "0 processos" today
+    not_collected = {f["subfila"] for f in meta.get("failed", [])} - latest.keys()
+    for sub in not_collected & collected.keys():  # keeps its page even with no diff to show
+        history.setdefault(sub, [(collected[sub][0], [])])
+
+    def queue_of(sub: int) -> tuple[list[dict], date, bool]:
+        """The queue to show, the day it was collected, and whether that day is the latest."""
+        if sub in not_collected and sub in collected:
+            day, rows = collected[sub]
+            return rows, day, False
+        return latest.get(sub, []), latest_day, True
+
     finished = datetime.fromisoformat(meta["finished"]).strftime("%Y-%m-%d %H:%M")
     stamp = (
         f"Última coleta bem-sucedida: {finished} (horário de Brasília), "
@@ -454,7 +471,10 @@ def build_site(
         entries = []
         feed_url = f"{base_url}/fila/{sub}.xml"
         for day, events in reversed(days_events):
-            queue = latest.get(sub) if day == newest_day else None  # full queue only once
+            # full queue only once; a subfila not collected today shows its last collected queue
+            shown, _, fresh_queue = queue_of(sub)
+            has_queue = sub in latest or not fresh_queue
+            queue = shown if day == newest_day and has_queue else None
             entries.append(
                 {
                     "id": tag_uri(base_tag, "fila", str(sub), day.isoformat()),
@@ -475,7 +495,14 @@ def build_site(
             )
         )
 
-        n = len(latest.get(sub, []))
+        rows, rows_day, fresh = queue_of(sub)
+        n = len(rows)
+        count = (
+            f"{n} processos em {latest_day.isoformat()}"
+            if fresh
+            else f"não coletada em {latest_day.isoformat()}; {n} processos na última coleta, "
+            f"em {rows_day.isoformat()}"
+        )
         area_id, grupo_id = slug(area), f"{slug(area)}--{slug(grupo)}"  # grupo names repeat
         area_href, grupo_href = f"../index.html#{area_id}", f"../index.html#{grupo_id}"
         heading = (
@@ -483,7 +510,7 @@ def build_site(
             f'<a href="../index.html">Filas</a><span>›</span><a href="{area_href}">'
             f'{html.escape(area)}</a><span>›</span><a href="{grupo_href}">{html.escape(grupo)}</a>'
             f"</nav><h1>{html.escape(name)}</h1>"
-            f'<p class="meta"><span>{n} processos em {latest_day.isoformat()}</span>'
+            f'<p class="meta"><span>{count}</span>'
             f'<a class="pill" href="{sub}.xml" title="Cole este endereço no seu leitor de feeds">'
             f'Feed Atom</a><button class="pill copy" type="button" data-copy="{feed_url}" hidden>'
             "Copiar endereço do feed</button>"
@@ -501,7 +528,11 @@ def build_site(
                     "pagina": f"{base_url}/fila/{sub}.html",
                     "feed": feed_url,
                     "mudancas": days_events[-1][1] if newest_day == latest_day else [],
-                    "fila": latest.get(sub, []),
+                    # false when the latest crawl failed on this subfila: `fila` is then the
+                    # queue of `fila_de`, the last day it was collected, not an empty queue
+                    "coletada": fresh,
+                    "fila_de": rows_day.isoformat(),
+                    "fila": rows,
                 },
                 ensure_ascii=False,
             )
@@ -520,7 +551,7 @@ def build_site(
         body += events + queue_block + history_html(days_events[:-1])
         description = (
             f"Fila de análise da ANVISA, {name} ({grupo}, {area}): "
-            f"{n} processos em {latest_day.isoformat()}. "
+            f"{n} processos em {rows_day.isoformat()}. "
             "Feed Atom com entradas, saídas e mudanças de posição diárias."
         )
         crumbs = {
@@ -637,11 +668,13 @@ def build_site(
                 '<ul class="filas">'
             )
             for name, sub in sorted(by_area[area][grupo]):
-                n = len(latest.get(sub, []))
-                zero = " zero" if n == 0 else ""
+                rows, _, fresh = queue_of(sub)
+                n = len(rows)
+                zero = " zero" if n == 0 or not fresh else ""
+                label = (f"{n} na fila" if n else "vazia") if fresh else "não coletada hoje"
                 lines.append(
                     f'<li><span class="t"><a href="fila/{sub}.html">{html.escape(name)}</a></span>'
-                    f'<span class="n{zero}">{f"{n} na fila" if n else "vazia"}</span>'
+                    f'<span class="n{zero}">{label}</span>'
                     f'<a class="feed" href="fila/{sub}.xml" title="Feed Atom desta subfila">'
                     "feed</a></li>"
                 )

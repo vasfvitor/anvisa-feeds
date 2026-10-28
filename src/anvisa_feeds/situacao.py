@@ -14,6 +14,7 @@ portal says the measure may cover only some lots.
 from __future__ import annotations
 
 from collections.abc import Callable
+from dataclasses import dataclass
 from pathlib import Path
 
 import httpx
@@ -23,16 +24,26 @@ TABLES = ("medicamentos_por_produto", "medidas")
 AREA_MEDICAMENTO = 1
 
 
+@dataclass(frozen=True)
+class Situacao:
+    """What carregar read: the anvisa-api build it came from and the data by registro."""
+
+    fonte: dict  # {"build_id", "built_at"} of the anvisa-api manifest
+    registros: dict[str, dict]
+
+
 def fetch(
     cache: Path, *, manifest_url: str = MANIFEST_URL, http: httpx.Client | None = None
-) -> dict[str, Path]:
-    """Download the two tables of the current build into `cache`; their paths by table name."""
+) -> tuple[dict[str, Path], dict]:
+    """Download the two tables of the current build into `cache`: their paths by table name,
+    and the build they came from ({"build_id", "built_at"})."""
     own = http is None
     http = http or httpx.Client(timeout=60, follow_redirects=True)
     try:
         manifest = http.get(manifest_url)
         manifest.raise_for_status()
-        tables = manifest.json()["tables"]  # {name: {path, rows, columns, …}}
+        data = manifest.json()
+        tables = data["tables"]  # {name: {path, rows, columns, …}}
         cache.mkdir(parents=True, exist_ok=True)
         out = {}
         for name in TABLES:
@@ -40,7 +51,7 @@ def fetch(
             r.raise_for_status()
             out[name] = cache / f"{name}.parquet"
             out[name].write_bytes(r.content)
-        return out
+        return out, {"build_id": data.get("build_id"), "built_at": data.get("built_at")}
     finally:
         if own:
             http.close()
@@ -78,11 +89,13 @@ def load(paths: dict[str, Path]) -> dict[str, dict]:
 
 def carregar(
     cache: Path, *, manifest_url: str = MANIFEST_URL, log: Callable[[str], None] = print
-) -> dict[str, dict] | None:
-    """fetch + load; None, with a line in the log, when the source cannot be read: the feeds
-    and prices still build, and the portal shows nothing about the registration."""
+) -> Situacao | None:
+    """fetch + load; None, with a line in the log, when the source cannot be read. The feeds and
+    prices still build, and cmed/dados then says so (`situacao_fonte: null`) instead of looking
+    like a day with nothing to report; the workflow turns that into a red run."""
     try:
-        return load(fetch(cache, manifest_url=manifest_url))
+        paths, fonte = fetch(cache, manifest_url=manifest_url)
+        return Situacao(fonte=fonte, registros=load(paths))
     except Exception as e:  # noqa: BLE001 - any failure here must not stop the build
         log(f"situação dos registros: fonte indisponível ({type(e).__name__}: {e})")
         return None

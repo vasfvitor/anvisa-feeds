@@ -10,8 +10,11 @@ calculada aqui.
 
 ## `produtos.json`
 
-`{stamp, publicado_em, produtos: [...]}`. `stamp` é o mês da lista (`AAAAMMDD`), `publicado_em` a data
-de publicação da CMED. Cada item:
+`{stamp, publicado_em, situacao_fonte, produtos: [...]}`. `stamp` é o mês da lista (`AAAAMMDD`),
+`publicado_em` a data de publicação da CMED. `situacao_fonte` é o build dos dados abertos da ANVISA de
+onde vieram `situacao` e `medidas` (`{build_id, built_at}`), ou `null` quando aquela fonte não pôde ser
+lida neste build: nesse caso os produtos vêm sem `situacao` e `medidas`, e isso quer dizer "não
+conferido", não "nada a informar". Cada item:
 
 | campo | o que é |
 |---|---|
@@ -54,7 +57,8 @@ build; então não há como dizer nada sobre o registro.
 
 ## `todos.json`
 
-`{stamp, publicado_em, produtos: [...]}`, em que cada item é exatamente o conteúdo do
+`{stamp, publicado_em, situacao_fonte, produtos: [...]}` (os três primeiros como no índice), em que
+cada item é exatamente o conteúdo do
 `produto/<registro_produto>.json` correspondente, na ordem do índice. É para quem precisa de tudo de
 uma vez (cerca de 13 MB, menos de 3 MB comprimido na entrega); para um remédio só, use o arquivo
 individual.

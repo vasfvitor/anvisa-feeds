@@ -157,3 +157,30 @@ def test_json_per_subfila_and_notice(client, tmp_path):
     for name in ("index.html", "fila/167.html"):
         assert '<div class="box warn">PAROU</div>' in (site / name).read_text(encoding="utf-8")
     assert 'href="167.json"' in (site / "fila" / "167.html").read_text(encoding="utf-8")
+
+
+def test_a_subfila_the_crawl_failed_on_is_not_shown_as_empty(client, tmp_path):
+    # the second day's crawl failed on subfila 167: it is missing from the snapshot and listed in
+    # the meta's failed; its pages must say "não coletada", with the last queue that was collected
+    snapshots, site = tmp_path / "snapshots", tmp_path / "site"
+    crawl(client, snapshots, day=date(2026, 9, 6), areas=[8], log=lambda s: None)
+    day1 = load_snapshot(snapshots, date(2026, 9, 6))
+    lines = [{"subfila": s, "area": 8, "grupo": 0, "rows": r} for s, r in day1.items() if s != 167]
+    write_snapshot(snapshots, date(2026, 9, 7), lines)
+    meta = dict(load_meta(snapshots, date(2026, 9, 6)), date="2026-09-07")
+    meta["failed"] = [{"subfila": 167, "error": "HTTPStatusError: 502"}]
+    dump_json(snapshots / "2026-09-07.meta.json", meta)
+
+    build_site(snapshots, site, base_url="https://x.test/f", base_tag="x.test,2026:f")
+    data = json.loads((site / "fila" / "167.json").read_text(encoding="utf-8"))
+    assert data["coletada"] is False and data["fila_de"] == "2026-09-06"
+    assert len(data["fila"]) == len(day1[167]) > 0
+    page = (site / "fila" / "167.html").read_text(encoding="utf-8")
+    assert "não coletada em 2026-09-07" in page
+    assert f"{len(day1[167])} processos em 2026-09-06" in page  # its day, not today
+    assert "processos em 2026-09-07" not in page
+    assert "não coletada hoje" in (site / "index.html").read_text(encoding="utf-8")
+    other = json.loads((site / "fila" / f"{next(iter(lines))['subfila']}.json").read_text())
+    assert other["coletada"] is True and other["fila_de"] == "2026-09-07"
+    novidades = json.loads((site / "meta.json").read_text(encoding="utf-8"))["novidades"]
+    assert all(m["subfila"] != 167 for m in novidades["filas"])

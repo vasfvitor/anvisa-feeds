@@ -17,6 +17,8 @@ from pathlib import Path
 
 from anvisa.dados import cmed as reader
 
+from .situacao import Situacao
+
 SCHEMA = Path(__file__).with_name("cmed_dados_schema.md")
 # "17,5" in the list → "17.5" in the JSON keys; column suffix "17_5"
 ALIQUOTAS = [(a.replace(",", "."), a.replace(",", "_")) for a in reader.ALIQUOTAS]
@@ -132,19 +134,28 @@ def write_dados(
     stamp: str,
     publicado_em: str,
     feeds: dict[str, str] | None = None,
-    situacao: dict[str, dict] | None = None,
+    situacao: Situacao | None = None,
 ) -> int:
     """Write out/dados/{produtos.json, todos.json, produto/<registro_produto>.json, schema.md};
-    returns the number of products."""
-    lista = produtos(rows, stamp=stamp, publicado_em=publicado_em, feeds=feeds, situacao=situacao)
+    returns the number of products. Both index files carry `situacao_fonte`: the anvisa-api
+    build the registration data came from, or null when it could not be read."""
+    registros = situacao.registros if situacao else None
+    lista = produtos(rows, stamp=stamp, publicado_em=publicado_em, feeds=feeds, situacao=registros)
+    fonte = situacao.fonte if situacao else None
     pasta = Path(out) / "dados" / "produto"
     pasta.mkdir(parents=True, exist_ok=True)
     for p in lista:
         (pasta / f"{p['registro_produto']}.json").write_text(_compact(p), encoding="utf-8")
+    idx = indice(lista, stamp=stamp, publicado_em=publicado_em)
     (pasta.parent / "produtos.json").write_text(
-        _compact(indice(lista, stamp=stamp, publicado_em=publicado_em)), encoding="utf-8"
+        _compact({**idx, "situacao_fonte": fonte}), encoding="utf-8"
     )
-    todos = {"stamp": stamp, "publicado_em": publicado_em, "produtos": lista}
+    todos = {
+        "stamp": stamp,
+        "publicado_em": publicado_em,
+        "situacao_fonte": fonte,
+        "produtos": lista,
+    }
     (pasta.parent / "todos.json").write_text(_compact(todos), encoding="utf-8")
     (pasta.parent / "schema.md").write_text(SCHEMA.read_text(encoding="utf-8"), encoding="utf-8")
     return len(lista)

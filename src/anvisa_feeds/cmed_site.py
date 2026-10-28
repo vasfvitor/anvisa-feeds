@@ -23,6 +23,7 @@ from . import feeds
 from .cmed import RELEASE_TAG, load_meta, load_rows, stamps
 from .cmed_dados import write_dados
 from .diff import diff_keyed, summary_keyed
+from .situacao import Situacao
 
 TITLE = "Preços CMED"
 SOURCE_URL = "https://www.gov.br/anvisa/pt-br/assuntos/medicamentos/cmed/precos"
@@ -260,7 +261,7 @@ def build_cmed(
     base_tag: str,
     months: int = 12,
     warn: str = "",
-    situacao: dict[str, dict] | None = None,
+    situacao: Situacao | None = None,
 ) -> dict | None:
     """Write site/cmed/: index, geral feed, one feed/page/json per substância and per
     laboratório, cmed.opml and feed.xsl. None when there are no CMED snapshots yet.

@@ -57,7 +57,11 @@ def test_load_joins_by_registro_and_keeps_only_medicine_measures(tmp_path):
 def test_fetch_reads_the_paths_from_the_manifest(tmp_path):
     files = tables(tmp_path / "src")
     # the shape of the live manifest: tables keyed by name
-    manifest = {"tables": {n: {"path": f"data/b1/{n}.parquet"} for n in situacao.TABLES}}
+    manifest = {
+        "build_id": "b1",
+        "built_at": "2026-10-28T00:08:51Z",
+        "tables": {n: {"path": f"data/b1/{n}.parquet"} for n in situacao.TABLES},
+    }
 
     def handler(request: httpx.Request) -> httpx.Response:
         path = request.url.path
@@ -67,10 +71,11 @@ def test_fetch_reads_the_paths_from_the_manifest(tmp_path):
         return httpx.Response(200, content=files[name].read_bytes())
 
     with httpx.Client(transport=httpx.MockTransport(handler)) as http:
-        got = situacao.fetch(
+        got, fonte = situacao.fetch(
             tmp_path / "cache", manifest_url="https://x.test/a/manifest.json", http=http
         )
     assert set(got) == set(situacao.TABLES)
+    assert fonte == {"build_id": "b1", "built_at": "2026-10-28T00:08:51Z"}
     assert situacao.load(got)["103110182"]["ativo"] is False
 
 
@@ -109,3 +114,31 @@ def test_products_carry_status_and_measures_only_when_the_source_was_read():
     (fonte_fora,) = cmed_dados.produtos({"1": row}, stamp="s", publicado_em="p")
     assert "situacao" not in fonte_fora and "medidas" not in fonte_fora
     json.dumps(p)  # what write_dados writes
+
+
+def test_index_files_say_whether_the_registration_source_was_read(tmp_path):
+    # a source that could not be read is null at the top of both files, not just missing keys:
+    # the portal and the workflow tell it apart from a day with nothing to report
+    row = {
+        "ggrem": "1",
+        "registro_produto": "103110182",
+        "apresentacao": "x",
+        "regime_preco": "Regulado",
+        "comercializacao": "S",
+        "comercializacao_periodo": "2025",
+        "restricao_hospitalar": "N",
+        "icms_0": "N",
+        "pmc_0": 100,
+        "tipo_produto": "Novo",
+        "tarja": None,
+    }
+    for k in ("produto", "laboratorio", "cnpj", "substancia", "classe_terapeutica"):
+        row[k] = "x"
+    fonte = {"build_id": "b1", "built_at": "2026-10-28T00:08:51Z"}
+    lida = situacao.Situacao(fonte=fonte, registros={})
+    for s, esperado in ((lida, fonte), (None, None)):
+        out = tmp_path / str(esperado is None)
+        cmed_dados.write_dados(out, {"1": row}, stamp="s", publicado_em="p", situacao=s)
+        for nome in ("produtos.json", "todos.json"):
+            dados = json.loads((out / "dados" / nome).read_text(encoding="utf-8"))
+            assert dados["situacao_fonte"] == esperado, nome
