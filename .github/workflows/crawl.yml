@@ -14,6 +14,15 @@ name: crawl
 on:
   schedule:
     - cron: "0 9 * * *"   # 06:00 America/Sao_Paulo
+  # a code or contract change reaches the site at once (build only, no crawl): before, it waited
+  # for the next morning, and the portal read the old cmed/dados until then
+  push:
+    branches: [main]
+    paths:
+      - "src/**"
+      - "pyproject.toml"
+      - "uv.lock"
+      - ".github/workflows/crawl.yml"
   workflow_dispatch:
     inputs:
       build_only:
@@ -30,7 +39,7 @@ concurrency:
 
 jobs:
   crawl:
-    if: ${{ !inputs.build_only }}
+    if: ${{ github.event_name != 'push' && !inputs.build_only }}
     runs-on: ubuntu-latest
     timeout-minutes: 60
     permissions:
@@ -68,12 +77,24 @@ jobs:
           # something may have landed on main during the crawl: rebase and retry, then fail loudly
           git push || (git pull --rebase origin main && git push) \
                    || (sleep 30 && git pull --rebase origin main && git push)
+      # after the commit, so a partial crawl is still kept and published (its failed subfilas
+      # say "não coletada"), but the run goes red instead of looking like a normal day
+      - name: Fail when more than 10% of the subfilas were not collected
+        env:
+          META: snapshots/${{ steps.day.outputs.day }}.meta.json
+        run: |
+          total=$(jq .subfilas_total "$META"); falhas=$(jq '.failed | length' "$META")
+          echo "$falhas of $total subfilas not collected"
+          if [ $((falhas * 10)) -gt "$total" ]; then
+            echo "::error::$falhas of $total subfilas were not collected today"
+            exit 1
+          fi
 
   cmed:
     # CMED's price list changes once a month: two conditional GETs a day (no credentials) and,
     # when the files changed, a snapshot commit plus a Release that keeps the month's raw files
     needs: crawl
-    if: ${{ always() && !inputs.build_only && needs.crawl.result != 'cancelled' }}
+    if: ${{ always() && github.event_name != 'push' && !inputs.build_only && needs.crawl.result != 'cancelled' }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
     permissions:
@@ -124,6 +145,9 @@ jobs:
     if: ${{ always() && needs.crawl.result != 'cancelled' && needs.cmed.result != 'cancelled' }}
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    outputs:
+      situacao_fonte: ${{ steps.estado.outputs.situacao_fonte }}
+      cmed_dias: ${{ steps.estado.outputs.cmed_dias }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1   # v7.0.1
         with:
@@ -137,9 +161,29 @@ jobs:
         run: |
           extra=()
           if [ "${{ needs.crawl.result }}" = "failure" ]; then
-            extra=(--notice "A coleta de hoje falhou; estes dados são da última coleta bem-sucedida.")
+            # a partial crawl was committed: its failed subfilas show their last collected queue
+            meta="snapshots/$(TZ=America/Sao_Paulo date +%F).meta.json"
+            if [ -f "$meta" ] && [ "$(jq .subfilas_crawled "$meta")" -gt 0 ]; then
+              n=$(jq '.failed | length' "$meta")
+              extra=(--notice "A coleta de hoje ficou incompleta: $n subfilas não responderam e mostram a última fila coletada.")
+            else
+              extra=(--notice "A coleta de hoje falhou; estes dados são da última coleta bem-sucedida.")
+            fi
           fi
           uv run anvisa-feeds build --snapshots snapshots --site site "${extra[@]}"
+      # what the alarmes job checks after the deploy; read here, where the site is, without
+      # failing, so a red alarm never holds back a deploy
+      - name: Record what the site was built from
+        id: estado
+        run: |
+          echo "situacao_fonte=$(jq -c '.situacao_fonte' site/cmed/dados/produtos.json 2>/dev/null || echo null)" >> "$GITHUB_OUTPUT"
+          stamp=$(jq -r '.cmed.stamp // empty' site/meta.json)
+          if [ -n "$stamp" ]; then
+            dias=$(( ( $(date -u +%s) - $(date -u -d "${stamp:0:4}-${stamp:4:2}-${stamp:6:2}" +%s) ) / 86400 ))
+          else
+            dias=9999
+          fi
+          echo "cmed_dias=$dias" >> "$GITHUB_OUTPUT"
       - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9   # v5.0.0
         with:
           path: site
@@ -160,3 +204,29 @@ jobs:
     steps:
       - id: deployment
         uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346   # v5.0.1
+
+  alarmes:
+    # after the deploy, so what was collected is always published; red when the site went out
+    # without the registration data or with a CMED list older than a month and a half
+    needs: [build, deploy]
+    if: ${{ always() && needs.build.result == 'success' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check the registration source and the CMED list's age
+        env:
+          FONTE: ${{ needs.build.outputs.situacao_fonte }}
+          CMED_DIAS: ${{ needs.build.outputs.cmed_dias }}
+        run: |
+          falhou=0
+          echo "situacao_fonte: $FONTE"
+          if [ -z "$FONTE" ] || [ "$FONTE" = null ]; then
+            echo "::error::cmed/dados went out without the registration status and measures (anvisa-api could not be read)"
+            falhou=1
+          fi
+          echo "CMED list: $CMED_DIAS days old"
+          if [ "$CMED_DIAS" -gt 45 ]; then
+            echo "::error::the CMED list is $CMED_DIAS days old"
+            falhou=1
+          fi
+          exit "$falhou"
