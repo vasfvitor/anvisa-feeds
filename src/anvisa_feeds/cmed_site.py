@@ -645,7 +645,13 @@ def build_cmed(
     (out / "cmed.opml").write_bytes(feeds.xml_bytes(opml))
     # data for the public portal: one JSON per product with the PMC at every ICMS rate
     # (meta.json is a contract with anvisa-hub: the count is not added to the returned block)
-    write_dados(out, latest, stamp=latest_stamp, publicado_em=meta["publicado_em"])
+    write_dados(
+        out,
+        latest,
+        stamp=latest_stamp,
+        publicado_em=meta["publicado_em"],
+        feeds={n: f"{base_url}/cmed/substancia/{s}.xml" for n, s in subst_slug.items()},
+    )
 
     return {
         "stamp": latest_stamp,

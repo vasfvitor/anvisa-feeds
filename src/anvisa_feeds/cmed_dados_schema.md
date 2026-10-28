@@ -20,8 +20,9 @@ de publicação da CMED. Cada item:
 
 ## `produto/<registro_produto>.json`
 
-Os campos do índice, mais `cnpj`, `classe_terapeutica`, `tarja`, `stamp`, `publicado_em` e
-`apresentacoes`, uma lista de:
+Os campos do índice, mais `cnpj`, `classe_terapeutica`, `tarja`, `stamp`, `publicado_em`,
+`feed_substancia` (URL do feed Atom da substância, `cmed/substancia/<slug>.xml`, ou `null` sem
+substância; use esta URL em vez de montar o slug) e `apresentacoes`, uma lista de:
 
 | campo | o que é |
 |---|---|

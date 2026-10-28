@@ -49,8 +49,14 @@ def apresentacao(row: dict) -> dict:
     }
 
 
-def produtos(rows: dict[str, dict], *, stamp: str, publicado_em: str) -> list[dict]:
-    """Group presentations with a PMC by registro_produto, sorted by it."""
+def produtos(
+    rows: dict[str, dict], *, stamp: str, publicado_em: str, feeds: dict[str, str] | None = None
+) -> list[dict]:
+    """Group presentations with a PMC by registro_produto, sorted by it. `feeds` maps a
+    substância to its feed URL: the slug depends on names the portal never sees (hospital-only
+    rows, event history) and on a hash for long names, so the portal reads it instead of
+    rebuilding it."""
+    feeds = feeds or {}
     grupos: dict[str, list[dict]] = defaultdict(list)
     for row in rows.values():
         if row.get("registro_produto") and _precos(row, alc=False):
@@ -58,13 +64,15 @@ def produtos(rows: dict[str, dict], *, stamp: str, publicado_em: str) -> list[di
     out = []
     for registro, lista in sorted(grupos.items()):
         lista.sort(key=lambda r: (r["apresentacao"] or "", r["ggrem"]))
+        substancia = _mais_comum([r["substancia"] for r in lista])
         out.append(
             {
                 "registro_produto": registro,
                 "produto": _mais_comum([r["produto"] for r in lista]),
                 "laboratorio": _mais_comum([r["laboratorio"] for r in lista]),
                 "cnpj": _mais_comum([r["cnpj"] for r in lista]),
-                "substancia": _mais_comum([r["substancia"] for r in lista]),
+                "substancia": substancia,
+                "feed_substancia": feeds.get(substancia) if substancia else None,
                 "classe_terapeutica": _mais_comum([r["classe_terapeutica"] for r in lista]),
                 "tipo_produto": _mais_comum([r["tipo_produto"] for r in lista]),
                 "tarja": _mais_comum([r["tarja"] for r in lista]),
@@ -99,10 +107,17 @@ def _compact(obj: object) -> str:
     return json.dumps(obj, ensure_ascii=False, separators=(",", ":")) + "\n"
 
 
-def write_dados(out: Path, rows: dict[str, dict], *, stamp: str, publicado_em: str) -> int:
+def write_dados(
+    out: Path,
+    rows: dict[str, dict],
+    *,
+    stamp: str,
+    publicado_em: str,
+    feeds: dict[str, str] | None = None,
+) -> int:
     """Write out/dados/{produtos.json, todos.json, produto/<registro_produto>.json, schema.md};
     returns the number of products."""
-    lista = produtos(rows, stamp=stamp, publicado_em=publicado_em)
+    lista = produtos(rows, stamp=stamp, publicado_em=publicado_em, feeds=feeds)
     pasta = Path(out) / "dados" / "produto"
     pasta.mkdir(parents=True, exist_ok=True)
     for p in lista:

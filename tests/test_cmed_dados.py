@@ -71,3 +71,15 @@ def test_rate_keys_follow_the_library():
     row.update({f"pmc_{s}_alc": 100 + i for i, (_, s) in enumerate(cmed_dados.ALIQUOTAS)})
     assert cmed_dados._precos(row, alc=False)["17.5"] == 3
     assert cmed_dados._precos(row, alc=True)["17.5"] == 103
+
+
+def test_each_product_points_to_its_substancia_feed(dados, client, tmp_path):  # noqa: F811
+    _, site, _ = site_with_months(dados, client, tmp_path, 1)
+    todos = read(site / "cmed" / "dados" / "todos.json")
+    com_feed = [p for p in todos["produtos"] if p["substancia"]]
+    assert com_feed
+    for p in com_feed:
+        assert p["feed_substancia"].startswith("https://")
+        caminho = site / "cmed" / p["feed_substancia"].split("/cmed/", 1)[1]
+        assert caminho.is_file(), p["feed_substancia"]
+        assert read(caminho.with_suffix(".json"))["substancia"] == p["substancia"]
