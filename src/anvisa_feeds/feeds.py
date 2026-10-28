@@ -393,9 +393,11 @@ def build_site(
     notice: str | None = None,
     cmed_snapshots: Path | None = None,
     cmed_months: int = 12,
+    situacao: dict[str, dict] | None = None,
 ) -> dict:
     """Write site/index.html, site/feed.xsl, site/fila/<id>.xml and site/fila/<id>.html, and
-    with CMED snapshots in `cmed_snapshots` (default `snapshots/cmed`) the site/cmed/ pages."""
+    with CMED snapshots in `cmed_snapshots` (default `snapshots/cmed`) the site/cmed/ pages.
+    `situacao` (situacao.carregar) is passed on to the CMED data for the portal."""
     from .cmed_site import build_cmed  # imports this module: resolved at call time
 
     all_days = snapshot_days(snapshots)
@@ -436,7 +438,13 @@ def build_site(
     # the CMED pages, when there are CMED snapshots: their own index, feeds and OPML
     cmed_dir = Path(cmed_snapshots) if cmed_snapshots else Path(snapshots) / "cmed"
     cmed = build_cmed(
-        cmed_dir, site, base_url=base_url, base_tag=base_tag, months=cmed_months, warn=warn
+        cmed_dir,
+        site,
+        base_url=base_url,
+        base_tag=base_tag,
+        months=cmed_months,
+        warn=warn,
+        situacao=situacao,
     )
 
     for sub, days_events in history.items():

@@ -31,6 +31,11 @@ format; a git-ignored `NOTES.local.md` holds pending items when present.
   is what the portal build reads (thousands of requests made GitHub Pages answer 429); the schema is `cmed_dados_schema.md`, published as
   `dados/schema.md`. A key change there needs a follow-up in the portal. Its count is kept out
   of `meta.json` on purpose (that file is anvisa-hub's contract).
+- Each product in `cmed/dados` also carries `situacao` (registration Ativo/Inativo, expiry) and
+  `medidas` (ANVISA measures citing the registro), read at build time from two anvisa-api Parquet
+  tables (`situacao.py`, about 1.5 MB through the Pages manifest, read locally with DuckDB from
+  `anvisa[dados]`). If that source fails, the build logs it and leaves both keys out; the feeds
+  and prices still build. `build --anvisa-manifest ''` skips it.
 - Site size: the CMED pages are about 7,600 files and 100 MB (2,264 substâncias and 262
   laboratórios, each with .xml, .html and .json). The JSON carries `cmed_site.JSON_FIELDS`
   only; the full 102 columns are the `cmed` Parquet of anvisa-api.

@@ -25,7 +25,19 @@ de publicação da CMED. Cada item:
 
 Os campos do índice, mais `cnpj`, `classe_terapeutica`, `tarja`, `stamp`, `publicado_em`,
 `feed_substancia` (URL do feed Atom da substância, `cmed/substancia/<slug>.xml`, ou `null` sem
-substância; use esta URL em vez de montar o slug) e `apresentacoes`, uma lista de:
+substância; use esta URL em vez de montar o slug), `situacao`, `medidas` e `apresentacoes`.
+
+`situacao` e `medidas` vêm dos dados abertos da ANVISA convertidos pelo
+[anvisa-api](https://vasfvitor.github.io/anvisa-api/) (tabelas `medicamentos_por_produto` e `medidas`),
+pelo mesmo `registro_produto`. Os dois campos **ficam de fora** quando aquela fonte não pôde ser lida no
+build; então não há como dizer nada sobre o registro.
+
+| campo | o que é |
+|---|---|
+| `situacao` | `{ativo, vencimento}`: `ativo` é `true` quando o registro está Ativo na ANVISA (a ANVISA só publica Ativo e Inativo); `vencimento` é o mês em que o registro vence (`AAAA-MM`) ou `null`. `null` quando a ANVISA não traz o registro |
+| `medidas` | medidas de fiscalização da ANVISA que citam o registro, da mais recente à mais antiga: `{data, acoes, atividades, processo}`. `data` é a última publicação (`AAAA-MM-DD`); `acoes` (Suspensão, Recolhimento, Proibição, Apreensão…) e `atividades` (Comercialização, Uso, Propaganda, Voluntário…) como a ANVISA escreve; `processo` é o da medida. A fonte não traz o lote: uma medida pode valer só para alguns lotes. Lista vazia quando não há nenhuma |
+
+`apresentacoes` é uma lista de:
 
 | campo | o que é |
 |---|---|

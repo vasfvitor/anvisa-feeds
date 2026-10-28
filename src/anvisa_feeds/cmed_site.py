@@ -260,9 +260,11 @@ def build_cmed(
     base_tag: str,
     months: int = 12,
     warn: str = "",
+    situacao: dict[str, dict] | None = None,
 ) -> dict | None:
     """Write site/cmed/: index, geral feed, one feed/page/json per substância and per
-    laboratório, cmed.opml and feed.xsl. None when there are no CMED snapshots yet."""
+    laboratório, cmed.opml and feed.xsl. None when there are no CMED snapshots yet.
+    `situacao` goes into cmed/dados (registration status and measures per product)."""
     known = stamps(snapshots)
     if not known:
         return None
@@ -683,6 +685,7 @@ def build_cmed(
         stamp=latest_stamp,
         publicado_em=meta["publicado_em"],
         feeds={n: f"{base_url}/cmed/substancia/{s}.xml" for n, s in subst_slug.items()},
+        situacao=situacao,
     )
 
     return {

@@ -54,12 +54,18 @@ def apresentacao(row: dict) -> dict:
 
 
 def produtos(
-    rows: dict[str, dict], *, stamp: str, publicado_em: str, feeds: dict[str, str] | None = None
+    rows: dict[str, dict],
+    *,
+    stamp: str,
+    publicado_em: str,
+    feeds: dict[str, str] | None = None,
+    situacao: dict[str, dict] | None = None,
 ) -> list[dict]:
     """Group presentations with a PMC by registro_produto, sorted by it. `feeds` maps a
     substância to its feed URL: the slug depends on names the portal never sees (hospital-only
     rows, event history) and on a hash for long names, so the portal reads it instead of
-    rebuilding it."""
+    rebuilding it. `situacao` (situacao.carregar) adds the registration status and the ANVISA
+    measures by registro; without it (source unavailable) both keys are left out."""
     feeds = feeds or {}
     grupos: dict[str, list[dict]] = defaultdict(list)
     for row in rows.values():
@@ -69,6 +75,13 @@ def produtos(
     for registro, lista in sorted(grupos.items()):
         lista.sort(key=lambda r: (r["apresentacao"] or "", r["ggrem"]))
         substancia = _mais_comum([r["substancia"] for r in lista])
+        extra = {}
+        if situacao is not None:
+            s = situacao.get(registro)
+            extra = {
+                "situacao": {"ativo": s["ativo"], "vencimento": s["vencimento"]} if s else None,
+                "medidas": s["medidas"] if s else [],
+            }
         out.append(
             {
                 "registro_produto": registro,
@@ -83,6 +96,7 @@ def produtos(
                 "stamp": stamp,
                 "publicado_em": publicado_em,
                 "apresentacoes": [apresentacao(r) for r in lista],
+                **extra,
             }
         )
     return out
@@ -118,10 +132,11 @@ def write_dados(
     stamp: str,
     publicado_em: str,
     feeds: dict[str, str] | None = None,
+    situacao: dict[str, dict] | None = None,
 ) -> int:
     """Write out/dados/{produtos.json, todos.json, produto/<registro_produto>.json, schema.md};
     returns the number of products."""
-    lista = produtos(rows, stamp=stamp, publicado_em=publicado_em, feeds=feeds)
+    lista = produtos(rows, stamp=stamp, publicado_em=publicado_em, feeds=feeds, situacao=situacao)
     pasta = Path(out) / "dados" / "produto"
     pasta.mkdir(parents=True, exist_ok=True)
     for p in lista:
