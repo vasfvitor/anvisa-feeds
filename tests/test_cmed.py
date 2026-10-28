@@ -108,6 +108,42 @@ def test_crawl_refetches_the_pair_when_one_file_changed(dados, tmp_path):
     assert urls == [reader.FILES["pmc"], reader.FILES["pmvg"], reader.FILES["pmc"]]
 
 
+def test_crawl_refuses_a_month_that_lost_many_rows(dados, tmp_path):
+    out, raw = tmp_path / "cmed", tmp_path / "raw"
+    snapshot_month(dados, out, raw)
+
+    def drop_three(kind, rows):
+        del rows[1:4]  # 23 → 20 rows: under 95 % of the previous month
+
+    dados.next_month(drop_three)
+    with pytest.raises(SystemExit, match="20 rows against 23"):
+        snapshot_month(dados, out, raw)
+    assert cmed.stamps(out) == ["20261009"]  # nothing written
+    with dados.client() as http:  # a list that really shrank goes in with a lower ratio
+        meta = cmed.crawl(out, raw_dir=raw, http=http, log=lambda s: None, min_rows_ratio=0.5)
+    assert meta and meta["stamp"] == "20261109" and meta["rows"] == 20
+
+
+def test_the_comercializacao_year_rolling_over_is_not_a_change():
+    a = {"g1": {"pf_0": 100, "comercializacao": "S", "comercializacao_periodo": "2025"}}
+    b = {"g1": {"pf_0": 100, "comercializacao": "S", "comercializacao_periodo": "2026"}}
+    assert diff_keyed(a, b, cmed_site.FIELDS) == []
+
+
+def test_change_li_labels_fields_and_never_says_descontinuado():
+    row = {"produto": "X", "apresentacao": "1 CP", "comercializacao_periodo": "2025"}
+    li = cmed_site.change_li(
+        {
+            "type": "changed",
+            "row": row,
+            "changes": {"comercializacao": ["S", "N"], "regime_preco": ["Regulado", "Liberado"]},
+        }
+    )
+    assert "sem comercialização informada em 2025" in li
+    assert "regime de preço: Regulado → Liberado" in li
+    assert "descontinu" not in li and "comercializacao" not in li
+
+
 def test_diff_keyed_reports_entered_left_and_field_changes():
     a = {"g1": {"pf_0": 100, "tarja": "x"}, "g2": {"pf_0": 5, "tarja": "y"}, "g3": {"pf_0": 1}}
     b = {"g1": {"pf_0": 110, "tarja": "x"}, "g2": {"pf_0": 5, "tarja": "y"}, "g4": {"pf_0": 2}}

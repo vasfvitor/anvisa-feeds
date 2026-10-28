@@ -33,12 +33,34 @@ PROVENANCE = (
     "Preços máximos, não preços praticados; não substitui a lista oficial."
 )
 # what counts as a change between months: every column but the key, the derived root, the
-# publication date and the two "shown but not applicable" flags
+# publication date, the two "shown but not applicable" flags and the year the comercialização
+# column refers to (the header says "COMERCIALIZAÇÃO 2025"; the year it rolls over, every row
+# would change)
 FIELDS = tuple(
     c
     for c in reader.COLUMNS
-    if c not in ("ggrem", "registro_produto", "publicado_em", "pmc_asterisco", "pmvg_asterisco")
+    if c
+    not in (
+        "ggrem",
+        "registro_produto",
+        "publicado_em",
+        "pmc_asterisco",
+        "pmvg_asterisco",
+        "comercializacao_periodo",
+    )
 )
+# how a non-price field reads in an event; comercialização has its own words (change_li)
+FIELD_LABELS = {
+    "tarja": "tarja",
+    "regime_preco": "regime de preço",
+    "restricao_hospitalar": "uso hospitalar",
+    "tipo_produto": "tipo",
+    "produto": "nome",
+    "laboratorio": "laboratório",
+    "substancia": "substância",
+    "apresentacao": "apresentação",
+    "classe_terapeutica": "classe terapêutica",
+}
 PRICE_FIELDS = ("pf_0", "pmc_0", "pmvg_0")  # the three shown in tables; the rest fold away
 # what the JSON files carry per presentation: the full 102 columns are in the Parquet (anvisa-api)
 JSON_FIELDS = (
@@ -164,7 +186,17 @@ def change_li(e: dict) -> str:
     other = [f for f in e["changes"] if f not in reader.PRICE_COLUMNS]
     for f in other[:3]:
         old, new = e["changes"][f]
-        parts.append(f"{f}: {html.escape(str(old))} → {html.escape(str(new))}")
+        if f == "comercializacao":
+            # the list only says whether a sale was reported in the year: never "descontinuado"
+            ano = r.get("comercializacao_periodo") or "o ano da lista"
+            parts.append(
+                f"sem comercialização informada em {html.escape(ano)}"
+                if new == "N"
+                else f"com comercialização informada em {html.escape(ano)}"
+            )
+            continue
+        label = FIELD_LABELS.get(f, f)
+        parts.append(f"{label}: {html.escape(str(old))} → {html.escape(str(new))}")
     priced = [f for f in e["changes"] if f in reader.PRICE_COLUMNS and f not in PRICE_FIELDS]
     if priced:
         parts.append(f"+{len(priced)} preços por alíquota")

@@ -9,6 +9,7 @@ from pathlib import Path
 import typer
 from anvisa.cli import handle_errors, make_client
 
+from .cmed import MIN_ROWS_RATIO
 from .cmed import crawl as crawl_cmed
 from .crawl import crawl
 from .feeds import build_site
@@ -76,8 +77,16 @@ def build_cmd(
 def crawl_cmed_cmd(
     snapshots: Path = typer.Option(Path("snapshots/cmed"), help="where CMED snapshots go"),
     raw_dir: Path = typer.Option(Path("raw/cmed"), help="where the month's two CSVs are kept"),
+    min_rows_ratio: float = typer.Option(
+        MIN_ROWS_RATIO, help="refuse a month with fewer rows than this share of the previous one"
+    ),
 ) -> None:
     """Fetch CMED's price list when it changed (two conditional GETs, no credentials) and
     write the month's snapshot. Prints the meta, or {"unchanged": true}."""
-    meta = crawl_cmed(snapshots, raw_dir=raw_dir, log=lambda s: typer.echo(s, err=True))
+    meta = crawl_cmed(
+        snapshots,
+        raw_dir=raw_dir,
+        log=lambda s: typer.echo(s, err=True),
+        min_rows_ratio=min_rows_ratio,
+    )
     typer.echo(json.dumps(meta if meta else {"unchanged": True}, ensure_ascii=False))

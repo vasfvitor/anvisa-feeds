@@ -31,6 +31,9 @@ from anvisa.dados.fetch import cmed_stamp, download_url, http_client
 from .crawl import dump_json, now
 
 RELEASE_TAG = "cmed-{stamp}"  # the GitHub Release that keeps the month's raw files
+# a month with fewer rows than this share of the previous one is refused: a truncated or partial
+# file would otherwise read as thousands of presentations leaving the list
+MIN_ROWS_RATIO = 0.95
 
 
 def stamps(snapshots: Path) -> list[str]:
@@ -61,10 +64,12 @@ def crawl(
     raw_dir: Path,
     http: httpx.Client | None = None,
     log: Callable[[str], None] = print,
+    min_rows_ratio: float = MIN_ROWS_RATIO,
 ) -> dict | None:
     """Fetch the two files when either changed since the latest snapshot (conditional on
     the recorded ETags), write the month's snapshot and meta, keep the raw files in
-    `raw_dir`. None when both answered 304: nothing new this month."""
+    `raw_dir`. None when both answered 304: nothing new this month. Exits without writing
+    when the new month has fewer than `min_rows_ratio` of the previous month's rows."""
     out, raw_dir = Path(out), Path(raw_dir)
     out.mkdir(parents=True, exist_ok=True)
     raw_dir.mkdir(parents=True, exist_ok=True)
@@ -103,6 +108,12 @@ def crawl(
     rows, stats = reader.read_merged(
         raw_dir / reader.FILES["pmc"], raw_dir / reader.FILES["pmvg"], publicado_em=publicado_em
     )
+    if previous and stats.rows < previous["rows"] * min_rows_ratio:
+        raise SystemExit(
+            f"snapshot {stamp}: {stats.rows} rows against {previous['rows']} in "
+            f"{previous['stamp']}; refusing it (rerun with a lower --min-rows-ratio if the list "
+            "really shrank)"
+        )
     columns = list(reader.COLUMNS)
     with lzma.open(out / f"{stamp}.jsonl.xz", "wt", encoding="utf-8") as fh:
         fh.write(json.dumps({"columns": columns}) + "\n")
