@@ -422,24 +422,24 @@ def build_site(
             for sub, events in diff_snapshots(prev, curr).items():
                 history.setdefault(sub, []).append((day, events))
         collected.update({sub: (day, rows) for sub, rows in curr.items()})
-        prev = curr
-    latest_day, latest = window[-1], prev or {}
+        # a subfila the crawl failed on keeps its last queue, so the next day's diff still sees
+        # what entered and left meanwhile; one dropped from the catalog is not carried
+        failed = {f["subfila"] for f in metas[day].get("failed", [])}
+        prev = {**{s: rows for s, rows in (prev or {}).items() if s in failed}, **curr}
+    latest_day, latest = window[-1], curr  # the window is never empty (checked above)
     for sub in latest:
         history.setdefault(sub, [(latest_day, [])])  # seen only on the latest day
 
     meta = metas[latest_day]
     # a subfila the latest crawl failed on is not empty: it was not collected, and its pages say
     # so with the last queue that was, instead of "0 processos" today
-    not_collected = {f["subfila"] for f in meta.get("failed", [])} - latest.keys()
-    for sub in not_collected & collected.keys():  # keeps its page even with no diff to show
-        history.setdefault(sub, [(collected[sub][0], [])])
-
-    def queue_of(sub: int) -> tuple[list[dict], date, bool]:
-        """The queue to show, the day it was collected, and whether that day is the latest."""
-        if sub in not_collected and sub in collected:
-            day, rows = collected[sub]
-            return rows, day, False
-        return latest.get(sub, []), latest_day, True
+    stale = {
+        f["subfila"]: collected[f["subfila"]]
+        for f in meta.get("failed", [])
+        if f["subfila"] in collected and f["subfila"] not in latest
+    }
+    for sub, (day, _) in stale.items():  # keeps its page even with no diff to show
+        history.setdefault(sub, [(day, [])])
 
     finished = datetime.fromisoformat(meta["finished"]).strftime("%Y-%m-%d %H:%M")
     stamp = (
@@ -468,13 +468,15 @@ def build_site(
         name, grupo, area = describe(catalog, sub)
         title = f"{name} · {grupo} · {area}"
         newest_day = days_events[-1][0]
+        # a subfila not collected today shows its last collected queue, with that day
+        fresh = sub not in stale
+        rows_day, rows = stale[sub] if not fresh else (latest_day, latest.get(sub, []))
         entries = []
         feed_url = f"{base_url}/fila/{sub}.xml"
         for day, events in reversed(days_events):
-            # full queue only once; a subfila not collected today shows its last collected queue
-            shown, _, fresh_queue = queue_of(sub)
-            has_queue = sub in latest or not fresh_queue
-            queue = shown if day == newest_day and has_queue else None
+            # full queue only once, on the newest entry
+            has_queue = sub in latest or not fresh
+            queue = rows if day == newest_day and has_queue else None
             entries.append(
                 {
                     "id": tag_uri(base_tag, "fila", str(sub), day.isoformat()),
@@ -495,7 +497,6 @@ def build_site(
             )
         )
 
-        rows, rows_day, fresh = queue_of(sub)
         n = len(rows)
         count = (
             f"{n} processos em {latest_day.isoformat()}"
@@ -668,10 +669,9 @@ def build_site(
                 '<ul class="filas">'
             )
             for name, sub in sorted(by_area[area][grupo]):
-                rows, _, fresh = queue_of(sub)
-                n = len(rows)
-                zero = " zero" if n == 0 or not fresh else ""
-                label = (f"{n} na fila" if n else "vazia") if fresh else "não coletada hoje"
+                n = len(stale[sub][1] if sub in stale else latest.get(sub, []))
+                zero = " zero" if n == 0 or sub in stale else ""
+                label = "não coletada hoje" if sub in stale else (f"{n} na fila" if n else "vazia")
                 lines.append(
                     f'<li><span class="t"><a href="fila/{sub}.html">{html.escape(name)}</a></span>'
                     f'<span class="n{zero}">{label}</span>'

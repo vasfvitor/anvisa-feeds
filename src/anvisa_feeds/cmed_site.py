@@ -699,6 +699,9 @@ def build_cmed(
         "feeds": 1 + len(subst_names) + len(lab_name),
         "months": len(window),
         "first_stamp": known[0],
+        # the anvisa-api build behind cmed/dados' situacao and medidas, null when not read: what
+        # the workflow's alarm and the portal's rebuild check compare, without the 3 MB index
+        "situacao_build": situacao.fonte.get("build_id") if situacao else None,
         "events": {k: counts[k] for k in ("entered", "changed", "left")},
         "release": RELEASE_TAG.format(stamp=latest_stamp),
         "destaques": {

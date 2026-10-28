@@ -184,3 +184,27 @@ def test_a_subfila_the_crawl_failed_on_is_not_shown_as_empty(client, tmp_path):
     assert other["coletada"] is True and other["fila_de"] == "2026-09-07"
     novidades = json.loads((site / "meta.json").read_text(encoding="utf-8"))["novidades"]
     assert all(m["subfila"] != 167 for m in novidades["filas"])
+
+
+def test_a_missed_day_does_not_lose_the_events_around_it(client, tmp_path):
+    # subfila 167 fails on day 2 and is back on day 3 with process 1 gone: the exit shows up on
+    # day 3, against the last collected queue, instead of vanishing with the gap
+    snapshots, site = tmp_path / "snapshots", tmp_path / "site"
+    crawl(client, snapshots, day=date(2026, 9, 6), areas=[8], log=lambda s: None)
+    day1 = load_snapshot(snapshots, date(2026, 9, 6))
+    base = dict(load_meta(snapshots, date(2026, 9, 6)))
+    lines2 = [{"subfila": s, "area": 8, "grupo": 0, "rows": r} for s, r in day1.items() if s != 167]
+    write_snapshot(snapshots, date(2026, 9, 7), lines2)
+    dump_json(
+        snapshots / "2026-09-07.meta.json",
+        dict(base, date="2026-09-07", failed=[{"subfila": 167, "error": "502"}]),
+    )
+    rows3 = [dict(r, posicao=r["posicao"] - 1) for r in day1[167] if r["posicao"] != 1]
+    lines3 = lines2 + [{"subfila": 167, "area": 8, "grupo": 0, "rows": rows3}]
+    write_snapshot(snapshots, date(2026, 9, 8), lines3)
+    dump_json(snapshots / "2026-09-08.meta.json", dict(base, date="2026-09-08", failed=[]))
+
+    build_site(snapshots, site, base_url="https://x.test/f", base_tag="x.test,2026:f")
+    data = json.loads((site / "fila" / "167.json").read_text(encoding="utf-8"))
+    assert data["coletada"] is True and data["dia"] == "2026-09-08"
+    assert [e["type"] for e in data["mudancas"]].count("left") == 1

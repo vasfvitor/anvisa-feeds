@@ -42,6 +42,8 @@ jobs:
     if: ${{ github.event_name != 'push' && !inputs.build_only }}
     runs-on: ubuntu-latest
     timeout-minutes: 60
+    outputs:
+      day: ${{ steps.day.outputs.day }}   # the build reads this day's meta, even past midnight
     permissions:
       contents: write   # commit the snapshot
     steps:
@@ -146,7 +148,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     outputs:
-      situacao_fonte: ${{ steps.estado.outputs.situacao_fonte }}
+      situacao_build: ${{ steps.estado.outputs.situacao_build }}
       cmed_dias: ${{ steps.estado.outputs.cmed_dias }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1   # v7.0.1
@@ -162,7 +164,7 @@ jobs:
           extra=()
           if [ "${{ needs.crawl.result }}" = "failure" ]; then
             # a partial crawl was committed: its failed subfilas show their last collected queue
-            meta="snapshots/$(TZ=America/Sao_Paulo date +%F).meta.json"
+            meta="snapshots/${{ needs.crawl.outputs.day }}.meta.json"
             if [ -f "$meta" ] && [ "$(jq .subfilas_crawled "$meta")" -gt 0 ]; then
               n=$(jq '.failed | length' "$meta")
               extra=(--notice "A coleta de hoje ficou incompleta: $n subfilas não responderam e mostram a última fila coletada.")
@@ -171,19 +173,14 @@ jobs:
             fi
           fi
           uv run anvisa-feeds build --snapshots snapshots --site site "${extra[@]}"
-      # what the alarmes job checks after the deploy; read here, where the site is, without
-      # failing, so a red alarm never holds back a deploy
+      # what the alarms after the deploy check; read here, where the site is, without failing,
+      # so a red alarm never holds back a deploy. Empty means missing.
       - name: Record what the site was built from
         id: estado
         run: |
-          echo "situacao_fonte=$(jq -c '.situacao_fonte' site/cmed/dados/produtos.json 2>/dev/null || echo null)" >> "$GITHUB_OUTPUT"
-          stamp=$(jq -r '.cmed.stamp // empty' site/meta.json)
-          if [ -n "$stamp" ]; then
-            dias=$(( ( $(date -u +%s) - $(date -u -d "${stamp:0:4}-${stamp:4:2}-${stamp:6:2}" +%s) ) / 86400 ))
-          else
-            dias=9999
-          fi
-          echo "cmed_dias=$dias" >> "$GITHUB_OUTPUT"
+          jq -r '"situacao_build=\(.cmed.situacao_build // "")",
+                 "cmed_dias=\(if .cmed.stamp then (now - (.cmed.stamp | strptime("%Y%m%d") | mktime)) / 86400 | floor else "" end)"' \
+            site/meta.json >> "$GITHUB_OUTPUT"
       - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9   # v5.0.0
         with:
           path: site
@@ -205,28 +202,22 @@ jobs:
       - id: deployment
         uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346   # v5.0.1
 
-  alarmes:
-    # after the deploy, so what was collected is always published; red when the site went out
-    # without the registration data or with a CMED list older than a month and a half
-    needs: [build, deploy]
-    if: ${{ always() && needs.build.result == 'success' }}
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-    steps:
+      # after the deploy, so what was collected is always published; red when the site went out
+      # without the registration data or with a CMED list older than a month and a half
       - name: Check the registration source and the CMED list's age
+        if: ${{ always() }}
         env:
-          FONTE: ${{ needs.build.outputs.situacao_fonte }}
+          SITUACAO: ${{ needs.build.outputs.situacao_build }}
           CMED_DIAS: ${{ needs.build.outputs.cmed_dias }}
         run: |
           falhou=0
-          echo "situacao_fonte: $FONTE"
-          if [ -z "$FONTE" ] || [ "$FONTE" = null ]; then
+          echo "registration build: ${SITUACAO:-none}; CMED list: ${CMED_DIAS:-?} days old"
+          if [ -z "$SITUACAO" ]; then
             echo "::error::cmed/dados went out without the registration status and measures (anvisa-api could not be read)"
             falhou=1
           fi
-          echo "CMED list: $CMED_DIAS days old"
-          if [ "$CMED_DIAS" -gt 45 ]; then
-            echo "::error::the CMED list is $CMED_DIAS days old"
+          if [ -z "$CMED_DIAS" ] || [ "$CMED_DIAS" -gt 45 ]; then
+            echo "::error::the CMED list is missing or ${CMED_DIAS} days old"
             falhou=1
           fi
           exit "$falhou"
