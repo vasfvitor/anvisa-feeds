@@ -2,8 +2,11 @@
 
 Gerados a cada build a partir da lista de preços da CMED (Câmara de Regulação do Mercado de
 Medicamentos) publicada pela ANVISA em dados.anvisa.gov.br. Só entram apresentações vendidas em
-farmácia, ou seja, com preço máximo ao consumidor (PMC); as de uso hospitalar não têm PMC e ficam de
-fora. Preços em **centavos**, como na lista.
+farmácia, ou seja, com preço máximo ao consumidor (PMC); as de uso hospitalar quase sempre não têm PMC
+e ficam de fora. As poucas que a lista marca como de uso hospitalar e mesmo assim traz com PMC (7 na
+lista de 09/10/2026) entram com `restricao_hospitalar: true`. A linha sem registro (`-` na lista) fica
+de fora. Preços em **centavos**, como na lista: cada alíquota é uma coluna da própria CMED, nenhuma é
+calculada aqui.
 
 ## `produtos.json`
 
@@ -16,7 +19,7 @@ de publicação da CMED. Cada item:
 | `produto`, `laboratorio`, `substancia` | nome comercial, laboratório e substância (o valor mais frequente entre as apresentações) |
 | `tipo_produto` | Genérico, Similar, Novo, Específico, Biológico, Fitoterápico… |
 | `apresentacoes` | quantas apresentações com PMC |
-| `comercializado` | `true` se alguma apresentação foi comercializada no ano da lista |
+| `comercializado` | `true` se alguma apresentação teve comercialização informada no ano a que a lista se refere (`comercializacao_periodo` da apresentação) |
 
 ## `produto/<registro_produto>.json`
 
@@ -30,8 +33,10 @@ substância; use esta URL em vez de montar o slug) e `apresentacoes`, uma lista 
 | `apresentacao` | dose, forma e embalagem, como na lista |
 | `eans` | códigos de barras |
 | `regime_preco` | `Regulado` ou `Liberado` |
-| `comercializado` | comercializada no ano da lista |
-| `icms_0` | a lista marca o preço como isento de ICMS |
+| `comercializado` | a empresa informou comercialização no ano `comercializacao_periodo`; `false` não quer dizer descontinuado, só que não houve venda informada naquele ano |
+| `comercializacao_periodo` | o ano a que `comercializado` se refere, como no cabeçalho da lista (`"2025"` na lista de 09/10/2026) |
+| `restricao_hospitalar` | a lista marca a apresentação como de uso hospitalar (a farmácia não vende) |
+| `icms_0` | a lista marca o preço como isento de ICMS: vale a coluna `"0"`, e as outras alíquotas não se aplicam |
 | `pmc` | preço máximo ao consumidor por alíquota de ICMS: `{"0": c, "12": c, "17": c, "17.5": c, …}` em centavos |
 | `pmc_alc` | o mesmo para Áreas de Livre Comércio (sem a alíquota 0) |
 

@@ -41,6 +41,8 @@ def test_products_hold_every_pharmacy_presentation(dados, client, tmp_path):  # 
             assert a["pmc_alc"].get("18") == row["pmc_18_alc"]
             assert "0" not in a["pmc_alc"]
             assert a["comercializado"] == (row["comercializacao"] == "S")
+            assert a["comercializacao_periodo"] == row["comercializacao_periodo"] == "2025"
+            assert a["restricao_hospitalar"] == (row["restricao_hospitalar"] == "S")
     assert vistos == set(com_pmc) and not (vistos & sem_pmc)
     assert (pasta / "schema.md").read_text(encoding="utf-8").startswith("# Preços máximos")
 
@@ -62,6 +64,31 @@ def test_meta_contract_is_unchanged(dados, client, tmp_path):  # noqa: F811
     _, site, _ = site_with_months(dados, client, tmp_path, 1)
     bloco = read(site / "meta.json")["cmed"]
     assert "produtos" not in bloco and "pages" not in bloco
+
+
+def test_a_hospital_only_presentation_with_a_pmc_goes_in_flagged():
+    # the 2026-10-09 list has 7 of these (FASENRA 116180267 among them): priced, but not sold
+    # in pharmacies, so the portal must say so instead of showing a plain price
+    row = {
+        "ggrem": "1",
+        "registro_produto": "116180267",
+        "apresentacao": "30 MG/ML SOL INJ",
+        "regime_preco": "Regulado",
+        "comercializacao": "S",
+        "comercializacao_periodo": "2025",
+        "restricao_hospitalar": "S",
+        "icms_0": "N",
+        "pmc_0": 100,
+    }
+    for k in ("produto", "laboratorio", "cnpj", "substancia", "classe_terapeutica"):
+        row[k] = "x"
+    row.update(tipo_produto="Biológico", tarja="Tarja Vermelha")
+    (p,) = cmed_dados.produtos({"1": row}, stamp="s", publicado_em="p")
+    (a,) = p["apresentacoes"]
+    assert a["restricao_hospitalar"] is True and a["pmc"] == {"0": 100}
+    # the row the list gives no registro (`-`) has no product to go under
+    sem_registro = {**row, "ggrem": "2", "registro_produto": None}
+    assert cmed_dados.produtos({"2": sem_registro}, stamp="s", publicado_em="p") == []
 
 
 def test_rate_keys_follow_the_library():

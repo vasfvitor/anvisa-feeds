@@ -3,8 +3,10 @@ consumer price (PMC) of each presentation at every ICMS rate, the same products 
 (todos.json, so the portal build makes one request instead of thousands), a search index and the
 schema.
 
-Only presentations sold in pharmacies (with some PMC) go in; hospital-only ones have no PMC. Prices
-stay as the list gives them, in centavos. Written under site/cmed/dados/ by build_cmed.
+Only presentations sold in pharmacies (with some PMC) go in; hospital-only ones have no PMC, except
+a few that the list marks hospital-only and still prices, which go in flagged. The one row with no
+registro (`-` in the list) has no product to go under and stays out. Prices stay as the list gives
+them, in centavos. Written under site/cmed/dados/ by build_cmed.
 """
 
 from __future__ import annotations
@@ -43,6 +45,8 @@ def apresentacao(row: dict) -> dict:
         "eans": [row[k] for k in ("ean_1", "ean_2", "ean_3") if row.get(k)],
         "regime_preco": row["regime_preco"],
         "comercializado": row["comercializacao"] == "S",
+        "comercializacao_periodo": row["comercializacao_periodo"],
+        "restricao_hospitalar": row["restricao_hospitalar"] == "S",
         "icms_0": row["icms_0"] == "S",
         "pmc": _precos(row, alc=False),
         "pmc_alc": _precos(row, alc=True),
