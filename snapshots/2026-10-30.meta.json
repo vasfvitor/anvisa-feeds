@@ -1,0 +1,17 @@
+{
+  "date": "2026-10-30",
+  "started": "2026-10-30T12:30:59.033683-03:00",
+  "finished": "2026-10-30T12:35:54.844267-03:00",
+  "seconds": 296,
+  "catalog_refreshed": false,
+  "requests": 318,
+  "rows": 10183,
+  "subfilas_total": 318,
+  "subfilas_crawled": 317,
+  "failed": [
+    {
+      "subfila": 3403,
+      "error": "ApiError: HTTP 500: {'timestamp': '2026-10-30T15:33:15Z', 'path': '/consultas-externas-api/api/v1/fila/consulta', 'status': 500, 'error': 'Internal Server Error', 'requestId': 'e1b8b019-470030'}"
+    }
+  ]
+}
