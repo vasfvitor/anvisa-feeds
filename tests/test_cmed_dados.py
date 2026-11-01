@@ -64,6 +64,7 @@ def test_meta_contract_is_unchanged(dados, client, tmp_path):  # noqa: F811
     _, site, _ = site_with_months(dados, client, tmp_path, 1)
     bloco = read(site / "meta.json")["cmed"]
     assert "produtos" not in bloco and "pages" not in bloco
+    assert bloco["dcb_build"] is None  # built without the source: what the workflow checks
 
 
 def test_a_hospital_only_presentation_with_a_pmc_goes_in_flagged():

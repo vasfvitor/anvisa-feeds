@@ -21,7 +21,7 @@ from xml.etree import ElementTree as ET
 from . import __version__
 from .crawl import describe, load_catalog, load_meta, load_snapshot, snapshot_days
 from .diff import diff_snapshots, summary
-from .situacao import Situacao
+from .situacao import Dcb, Situacao
 
 ATOM = "http://www.w3.org/2005/Atom"
 SITEMAP = "http://www.sitemaps.org/schemas/sitemap/0.9"
@@ -395,10 +395,12 @@ def build_site(
     cmed_snapshots: Path | None = None,
     cmed_months: int = 12,
     situacao: Situacao | None = None,
+    dcb: Dcb | None = None,
 ) -> dict:
     """Write site/index.html, site/feed.xsl, site/fila/<id>.xml and site/fila/<id>.html, and
     with CMED snapshots in `cmed_snapshots` (default `snapshots/cmed`) the site/cmed/ pages.
-    `situacao` (situacao.carregar) is passed on to the CMED data for the portal."""
+    `situacao` (situacao.carregar) and `dcb` (situacao.carregar_dcb) are passed on to the CMED
+    data for the portal."""
     from .cmed_site import build_cmed  # imports this module: resolved at call time
 
     all_days = snapshot_days(snapshots)
@@ -462,6 +464,7 @@ def build_site(
         months=cmed_months,
         warn=warn,
         situacao=situacao,
+        dcb=dcb,
     )
 
     for sub, days_events in history.items():

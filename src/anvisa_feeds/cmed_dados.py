@@ -17,7 +17,7 @@ from pathlib import Path
 
 from anvisa.dados import cmed as reader
 
-from .situacao import Situacao
+from .situacao import Dcb, Situacao
 
 SCHEMA = Path(__file__).with_name("cmed_dados_schema.md")
 # "17,5" in the list → "17.5" in the JSON keys; column suffix "17_5"
@@ -135,10 +135,14 @@ def write_dados(
     publicado_em: str,
     feeds: dict[str, str] | None = None,
     situacao: Situacao | None = None,
+    dcb: Dcb | None = None,
 ) -> int:
-    """Write out/dados/{produtos.json, todos.json, produto/<registro_produto>.json, schema.md};
-    returns the number of products. Both index files carry `situacao_fonte`: the anvisa-api
-    build the registration data came from, or null when it could not be read."""
+    """Write out/dados/{produtos.json, todos.json, substancias.json, schema.md,
+    produto/<registro_produto>.json}; returns the number of products. Both index files carry
+    `situacao_fonte`: the anvisa-api build the registration data came from, or null when it
+    could not be read.
+    `substancias.json` has the official names of this list's substâncias, apart because they
+    are under another license; `fonte` is null when they could not be read."""
     registros = situacao.registros if situacao else None
     lista = produtos(rows, stamp=stamp, publicado_em=publicado_em, feeds=feeds, situacao=registros)
     fonte = situacao.fonte if situacao else None
@@ -157,5 +161,12 @@ def write_dados(
         "produtos": lista,
     }
     (pasta.parent / "todos.json").write_text(_compact(todos), encoding="utf-8")
+    nomes = dcb.nomes if dcb else {}
+    desta_lista = sorted({p["substancia"] for p in lista} & nomes.keys())
+    substancias = {
+        "fonte": dcb.fonte if dcb else None,
+        "substancias": {s: nomes[s] for s in desta_lista},
+    }
+    (pasta.parent / "substancias.json").write_text(_compact(substancias), encoding="utf-8")
     (pasta.parent / "schema.md").write_text(SCHEMA.read_text(encoding="utf-8"), encoding="utf-8")
     return len(lista)

@@ -36,6 +36,10 @@ format; a git-ignored `NOTES.local.md` holds pending items when present.
   tables (`situacao.py`, about 1.5 MB through the Pages manifest, read locally with DuckDB from
   `anvisa[dados]`). If that source fails, the build logs it and leaves both keys out; the feeds
   and prices still build. `build --anvisa-manifest ''` skips it.
+- `cmed/dados/substancias.json` has the official name (DCB) of each substância, read the same way
+  from `substancias_dcb` but on its own (`situacao.carregar_dcb`), so neither source takes the
+  other down. It is a separate file because that table is CC BY-NC-SA 4.0, not open data: keep
+  its license with it.
 - Site size: the CMED pages are about 7,600 files and 100 MB (2,264 substâncias and 262
   laboratórios, each with .xml, .html and .json). The JSON carries `cmed_site.JSON_FIELDS`
   only; the full 102 columns are the `cmed` Parquet of anvisa-api.

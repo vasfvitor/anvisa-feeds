@@ -23,7 +23,7 @@ from . import feeds
 from .cmed import RELEASE_TAG, load_meta, load_rows, stamps
 from .cmed_dados import write_dados
 from .diff import diff_keyed, summary_keyed
-from .situacao import Situacao
+from .situacao import Dcb, Situacao
 
 TITLE = "Preços CMED"
 SOURCE_URL = "https://www.gov.br/anvisa/pt-br/assuntos/medicamentos/cmed/precos"
@@ -262,10 +262,12 @@ def build_cmed(
     months: int = 12,
     warn: str = "",
     situacao: Situacao | None = None,
+    dcb: Dcb | None = None,
 ) -> dict | None:
     """Write site/cmed/: index, geral feed, one feed/page/json per substância and per
     laboratório, cmed.opml and feed.xsl. None when there are no CMED snapshots yet.
-    `situacao` goes into cmed/dados (registration status and measures per product)."""
+    `situacao` goes into cmed/dados (registration status and measures per product), and so
+    does `dcb` (the official names of the substâncias)."""
     known = stamps(snapshots)
     if not known:
         return None
@@ -687,6 +689,7 @@ def build_cmed(
         publicado_em=meta["publicado_em"],
         feeds={n: f"{base_url}/cmed/substancia/{s}.xml" for n, s in subst_slug.items()},
         situacao=situacao,
+        dcb=dcb,
     )
 
     return {
@@ -702,6 +705,7 @@ def build_cmed(
         # the anvisa-api build behind cmed/dados' situacao and medidas, null when not read: what
         # the workflow's alarm and the portal's rebuild check compare, without the 3 MB index
         "situacao_build": situacao.fonte.get("build_id") if situacao else None,
+        "dcb_build": dcb.fonte.get("build_id") if dcb else None,  # the same, for substancias.json
         "events": {k: counts[k] for k in ("entered", "changed", "left")},
         "release": RELEASE_TAG.format(stamp=latest_stamp),
         "destaques": {

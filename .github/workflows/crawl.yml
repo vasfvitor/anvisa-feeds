@@ -149,6 +149,7 @@ jobs:
     timeout-minutes: 10
     outputs:
       situacao_build: ${{ steps.estado.outputs.situacao_build }}
+      dcb_build: ${{ steps.estado.outputs.dcb_build }}
       cmed_dias: ${{ steps.estado.outputs.cmed_dias }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1   # v7.0.1
@@ -179,6 +180,7 @@ jobs:
         id: estado
         run: |
           jq -r '"situacao_build=\(.cmed.situacao_build // "")",
+                 "dcb_build=\(.cmed.dcb_build // "")",
                  "cmed_dias=\(if .cmed.stamp then (now - (.cmed.stamp | strptime("%Y%m%d") | mktime)) / 86400 | floor else "" end)"' \
             site/meta.json >> "$GITHUB_OUTPUT"
       - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9   # v5.0.0
@@ -203,17 +205,23 @@ jobs:
         uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346   # v5.0.1
 
       # after the deploy, so what was collected is always published; red when the site went out
-      # without the registration data or with a CMED list older than a month and a half
-      - name: Check the registration source and the CMED list's age
+      # without the registration data or the official names, or with a CMED list older than a
+      # month and a half
+      - name: Check the anvisa-api sources and the CMED list's age
         if: ${{ always() }}
         env:
           SITUACAO: ${{ needs.build.outputs.situacao_build }}
+          DCB: ${{ needs.build.outputs.dcb_build }}
           CMED_DIAS: ${{ needs.build.outputs.cmed_dias }}
         run: |
           falhou=0
-          echo "registration build: ${SITUACAO:-none}; CMED list: ${CMED_DIAS:-?} days old"
+          echo "registration build: ${SITUACAO:-none}; official names build: ${DCB:-none}; CMED list: ${CMED_DIAS:-?} days old"
           if [ -z "$SITUACAO" ]; then
             echo "::error::cmed/dados went out without the registration status and measures (anvisa-api could not be read)"
+            falhou=1
+          fi
+          if [ -z "$DCB" ]; then
+            echo "::error::cmed/dados went out without the official names (anvisa-api could not be read)"
             falhou=1
           fi
           if [ -z "$CMED_DIAS" ] || [ "$CMED_DIAS" -gt 45 ]; then

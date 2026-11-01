@@ -63,5 +63,23 @@ cada item é exatamente o conteúdo do
 uma vez (cerca de 13 MB, menos de 3 MB comprimido na entrega); para um remédio só, use o arquivo
 individual.
 
+## `substancias.json`
+
+`{fonte, substancias: {substancia: [denominações]}}`: o nome oficial no Brasil de cada substância desta
+lista, a Denominação Comum Brasileira (DCB). A chave é `substancia` como nos outros arquivos; numa
+associação, as denominações vêm na ordem dos componentes. Só entra a substância com **todos** os
+componentes na DCB, pela regra de `substancias_dcb` no
+[anvisa-api](https://vasfvitor.github.io/anvisa-api/dicionario.html#substancias_dcb); ficar de fora não
+diz nada sobre o remédio.
+
+`fonte` é `{build_id, built_at, titulo, licenca}`, ou `null` quando a tabela não pôde ser lida neste
+build (então `substancias` vem vazio). `titulo` é a versão da lista, e `licenca` é `{name, url}`.
+
+Este arquivo tem **outra licença**, a da lista da Anvisa: CC BY-NC-SA 4.0. Quem reusar deve citar a
+Anvisa, não fazer uso comercial e redistribuir sob a mesma licença. A lista é uma cópia atualizada à
+mão a cada Instrução Normativa e pode atrasar em relação à versão vigente.
+
+## Alíquotas
+
 A alíquota que vale depende do estado onde o remédio é vendido e, às vezes, do tipo de produto; a
 lista da CMED não diz qual estado usa qual alíquota.

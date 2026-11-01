@@ -88,6 +88,98 @@ def test_carregar_gives_none_when_the_source_fails(tmp_path):
     assert lines and "indisponível" in lines[0]
 
 
+def tabela_dcb(tmp: Path) -> Path:
+    """`substancias_dcb` with the columns the module reads, as in the 2026-11-01 build."""
+    tmp.mkdir(parents=True, exist_ok=True)
+    path = tmp / "substancias_dcb.parquet"
+    duckdb.connect().execute(
+        f"""COPY (SELECT * FROM (VALUES
+              ('LOSARTANA POTÁSSICA;HIDROCLOROTIAZIDA',
+               ['losartana potássica', 'hidroclorotiazida'], true),
+              ('CAFEÍNA ANIDRA', [NULL], false),
+              ('ZINCO;FICTÍCIA', ['zinco', NULL], false)
+            ) t(substancia, dcb_denominacoes, todas_na_dcb)) TO '{path}' (FORMAT parquet)"""
+    )
+    return path
+
+
+def manifest_dcb(titulo: str) -> dict:
+    licenca = {"name": "CC BY-NC-SA 4.0", "url": "https://creativecommons.org/x"}
+    return {
+        "build_id": "b2",
+        "built_at": "2026-11-01T16:19:34Z",
+        "tables": {
+            "dcb": {"path": "data/b2/dcb.parquet", "source": {"name": titulo}, "license": licenca},
+            "substancias_dcb": {"path": "data/b2/substancias_dcb.parquet", "license": licenca},
+        },
+    }
+
+
+def servir(manifest: dict, parquet: Path) -> httpx.Client:
+    def handler(request: httpx.Request) -> httpx.Response:
+        if request.url.path.endswith("manifest.json"):
+            return httpx.Response(200, json=manifest)
+        return httpx.Response(200, content=parquet.read_bytes())
+
+    return httpx.Client(transport=httpx.MockTransport(handler))
+
+
+def test_dcb_reads_the_names_with_the_title_and_license_to_cite(tmp_path):
+    parquet = tabela_dcb(tmp_path / "src")
+    manifest = manifest_dcb("Lista consolidada das DCB: versão IN Anvisa n° 473 - VIGENTE")
+    with servir(manifest, parquet) as http:
+        path, fonte = situacao.fetch_dcb(
+            tmp_path / "cache", manifest_url="https://x.test/a/manifest.json", http=http
+        )
+    assert fonte == {
+        "build_id": "b2",
+        "built_at": "2026-11-01T16:19:34Z",
+        "titulo": "Lista consolidada das DCB: versão IN Anvisa n° 473",
+        "licenca": manifest["tables"]["dcb"]["license"],
+    }
+    # with only some parts in the DCB, or none, the substância is left out
+    assert situacao.load_dcb(path) == {
+        "LOSARTANA POTÁSSICA;HIDROCLOROTIAZIDA": ["losartana potássica", "hidroclorotiazida"]
+    }
+
+
+def test_carregar_dcb_gives_none_when_the_source_fails(tmp_path):
+    lines = []
+    url = "http://127.0.0.1:9/m.json"
+    assert situacao.carregar_dcb(tmp_path, manifest_url=url, log=lines.append) is None
+    assert lines and "DCB" in lines[0] and "indisponível" in lines[0]
+
+
+def test_substancias_json_has_this_lists_names_and_says_when_they_were_not_read(tmp_path):
+    row = {
+        "ggrem": "1",
+        "registro_produto": "103110182",
+        "apresentacao": "x",
+        "regime_preco": "Regulado",
+        "comercializacao": "S",
+        "comercializacao_periodo": "2025",
+        "restricao_hospitalar": "N",
+        "icms_0": "N",
+        "pmc_0": 100,
+        "tipo_produto": "Novo",
+        "tarja": None,
+    }
+    for k in ("produto", "laboratorio", "cnpj", "classe_terapeutica"):
+        row[k] = "x"
+    row["substancia"] = "LOSARTANA"
+    fonte = {"build_id": "b2", "titulo": "t", "licenca": {"name": "n", "url": "u"}}
+    nomes = {"LOSARTANA": ["losartana"], "FORA DA LISTA": ["outra"]}
+    dcb = situacao.Dcb(fonte=fonte, nomes=nomes)
+    for d, esperado in (
+        (dcb, {"fonte": fonte, "substancias": {"LOSARTANA": ["losartana"]}}),
+        (None, {"fonte": None, "substancias": {}}),
+    ):
+        out = tmp_path / str(d is None)
+        cmed_dados.write_dados(out, {"1": row}, stamp="s", publicado_em="p", dcb=d)
+        lido = json.loads((out / "dados" / "substancias.json").read_text(encoding="utf-8"))
+        assert lido == esperado
+
+
 def test_products_carry_status_and_measures_only_when_the_source_was_read():
     row = {
         "ggrem": "1",

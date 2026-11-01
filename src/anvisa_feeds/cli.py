@@ -14,7 +14,7 @@ from .cmed import MIN_ROWS_RATIO
 from .cmed import crawl as crawl_cmed
 from .crawl import crawl
 from .feeds import build_site
-from .situacao import MANIFEST_URL
+from .situacao import MANIFEST_URL, carregar_dcb
 from .situacao import carregar as carregar_situacao
 
 app = typer.Typer(
@@ -62,18 +62,21 @@ def build_cmd(
     cmed_months: int = typer.Option(12, help="how many months of history each CMED feed carries"),
     anvisa_manifest: str = typer.Option(
         MANIFEST_URL,
-        help="anvisa-api open-data manifest, for the registration status and measures in "
-        "cmed/dados; empty to leave them out",
+        help="anvisa-api open-data manifest, for the registration status, the measures and the "
+        "official names in cmed/dados; empty to leave them out",
     ),
 ) -> None:
     """Render index.html plus one Atom feed and one page per subfila from the snapshots, and
     the CMED pages when there are CMED snapshots."""
-    situacao = None
+
+    def log(line: str) -> None:
+        typer.echo(line, err=True)
+
+    situacao = dcb = None
     if anvisa_manifest and cmed_snapshots.is_dir():
         with tempfile.TemporaryDirectory() as tmp:
-            situacao = carregar_situacao(
-                Path(tmp), manifest_url=anvisa_manifest, log=lambda s: typer.echo(s, err=True)
-            )
+            situacao = carregar_situacao(Path(tmp), manifest_url=anvisa_manifest, log=log)
+            dcb = carregar_dcb(Path(tmp), manifest_url=anvisa_manifest, log=log)
     result = build_site(
         snapshots,
         site,
@@ -84,6 +87,7 @@ def build_cmd(
         cmed_snapshots=cmed_snapshots,
         cmed_months=cmed_months,
         situacao=situacao,
+        dcb=dcb,
     )
     typer.echo(json.dumps(result))
 
