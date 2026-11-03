@@ -18,7 +18,7 @@ from datetime import date, datetime
 from pathlib import Path
 from xml.etree import ElementTree as ET
 
-from . import __version__
+from . import __version__, ritmo
 from .crawl import describe, load_catalog, load_meta, load_snapshot, snapshot_days
 from .diff import diff_snapshots, summary
 from .situacao import Dcb, Situacao
@@ -45,7 +45,8 @@ a{color:var(--accent);text-decoration:none}a:hover{text-decoration:underline}
 .wrap{max-width:64rem;margin:0 auto;padding:0 1rem}
 .site{border-bottom:1px solid var(--line)}.site .wrap{display:flex;flex-wrap:wrap;gap:.5rem 1.5rem;
 align-items:baseline;padding:.75rem 1rem}.site .name{font-weight:600;color:var(--fg)}
-.site nav{margin-left:auto;display:flex;gap:1rem;font-size:.9em}
+.site nav{margin-left:auto;display:flex;flex-wrap:wrap;gap:.25rem 1rem;font-size:.9em}
+.site nav a{white-space:nowrap}
 main{padding:1.25rem 0 2rem}
 h1{font-size:1.5rem;line-height:1.25;margin:.25rem 0 .5rem;font-weight:650;letter-spacing:-.01em}
 h2{font-size:1.05rem;margin:2rem 0 .5rem;padding-bottom:.25rem;border-bottom:1px solid var(--line)}
@@ -99,8 +100,11 @@ table.queue td:first-child,table.queue th:first-child{text-align:right;color:var
 padding-right:.75rem}table.queue td.p{white-space:nowrap}table.queue td.d{white-space:nowrap;
 color:var(--muted)}
 .scroll{overflow-x:auto}
-table.queue.cmed td:first-child,table.queue.cmed th:first-child{text-align:left;color:var(--fg);
-width:auto;padding-right:.5rem}
+table.queue.cmed td:first-child,table.queue.cmed th:first-child,table.queue.ritmo td:first-child,
+table.queue.ritmo th:first-child{text-align:left;color:var(--fg);width:auto;padding-right:.5rem}
+table.queue.ritmo td:first-child small{display:block;color:var(--muted)}
+table.queue.ritmo .n{text-align:right;white-space:nowrap}table.queue.ritmo td.p{color:var(--muted)}
+.ritmo-linha{color:var(--muted);font-size:.9em}
 table.queue.cmed td:not(.p):not(.d){min-width:7rem}
 h1,ul.filas .t{overflow-wrap:anywhere}
 .empty{color:var(--muted);font-style:italic}
@@ -301,7 +305,7 @@ def atom_feed(
 
 def fila_nav(root: str, *, cmed: bool) -> list[tuple[str, str]]:
     """The header links of the fila pages; the CMED one only once there are CMED pages."""
-    links = [(f"{root}index.html", "Todas as filas")]
+    links = [(f"{root}index.html", "Todas as filas"), (f"{root}ritmo.html", "Ritmo")]
     if cmed:
         links.append((f"{root}cmed/index.html", "Preços CMED"))
     links.append((f"{root}feeds.opml", "OPML"))
@@ -390,6 +394,137 @@ def xml_bytes(root: ET.Element) -> bytes:
     ).encode("utf-8")
 
 
+def semanas_txt(r: ritmo.Ritmo) -> str:
+    return " · ".join(str(n) for n in r.semanas)
+
+
+def ritmo_linha(r: ritmo.Ritmo | None, *, root: str) -> str:
+    """The one line about the ritmo on a subfila page, linking to the whole table."""
+    if r is None:
+        return ""
+    return (
+        f'<p class="ritmo-linha">Ritmo nas últimas {ritmo.WEEKS} semanas: {r.saidas} '
+        f"saída{'' if r.saidas == 1 else 's'} "
+        f"({semanas_txt(r)}, da mais antiga à mais recente), {ritmo.ROTULOS[r.situacao]}. "
+        f'<a href="{root}ritmo.html#s{r.subfila}">Ritmo de todas as filas</a></p>'
+    )
+
+
+def ritmo_page(
+    site: Path,
+    ritmos: dict[int, ritmo.Ritmo],
+    catalog: dict,
+    janela: tuple[date, date],
+    *,
+    base_url: str,
+    stamp: str,
+    warn: str,
+    nav: list[tuple[str, str]],
+) -> None:
+    """site/ritmo.html and site/ritmo.json: the exits of every subfila per week, área by área,
+    with the rule behind each situação and no forecast date."""
+    inicio, fim = janela
+    contagem = {s: sum(1 for r in ritmos.values() if r.situacao == s) for s in ritmo.SITUACOES}
+    com_saida = sum(1 for r in ritmos.values() if r.saidas)
+    por_area: dict[str, list[tuple[str, str, ritmo.Ritmo]]] = {}
+    for sub, r in ritmos.items():
+        name, grupo, area = describe(catalog, sub)
+        por_area.setdefault(area, []).append((grupo, name, r))
+    secoes = []
+    # describe() says ? for a subfila missing from the catalog: named here, and listed last
+    for area in sorted(por_area, key=lambda a: (a == "?", a)):
+        rotulo = "Fora do catálogo" if area == "?" else area
+        linhas = []
+        for grupo, name, r in sorted(por_area[area], key=lambda x: (x[0], x[1])):
+            comeco = f"{round(100 * r.do_comeco / r.saidas)} %" if r.saidas else "—"
+            linhas.append(
+                f'<tr id="s{r.subfila}"><td><a href="fila/{r.subfila}.html">{html.escape(name)}</a>'
+                f"<small>{html.escape(grupo)}</small></td>"
+                f'<td class="n">{r.na_fila}</td><td class="p">{semanas_txt(r)}</td>'
+                f'<td class="n">{r.saidas}</td><td class="n">{comeco}</td>'
+                f"<td>{ritmo.ROTULOS[r.situacao]}</td></tr>"
+            )
+        secoes.append(
+            f'<section data-group><h2 id="{slug(rotulo)}">{html.escape(rotulo)}</h2>'
+            '<div class="scroll"><table class="queue ritmo"><thead><tr><th>Subfila</th>'
+            '<th class="n">Na fila</th><th>Saídas por semana</th><th class="n">Total</th>'
+            '<th class="n">Do começo</th><th>Situação</th></tr></thead><tbody>'
+            + "".join(linhas)
+            + "</tbody></table></div></section>"
+        )
+    resumo = ", ".join(ritmo.contar(contagem[s], s) for s in ritmo.SITUACOES)
+    # the reason for no forecast is said only while the numbers on this page back it
+    motivo = (
+        " Por isso esta página não dá data prevista: na maioria das filas com saída, o número de "
+        "saídas muda muito de uma semana para outra."
+        if contagem["irregular"] > contagem["regular"]
+        else " Esta página não dá data prevista."
+    )
+    periodo = f"{inicio.isoformat()} a {fim.isoformat()}"
+    body = (
+        warn + '<p class="lead">Quantos processos saíram de cada subfila por semana nas '
+        f"{ritmo.WEEKS} semanas de {periodo}: {resumo}. Das {com_saida} subfilas com alguma "
+        f"saída, {contagem['regular']} têm ritmo regular.{motivo}</p>"
+        '<div class="box"><p>Saída é um processo que estava na fila num dia e não está no '
+        "seguinte; a coleta não diz por quê. As semanas contam para trás a partir da coleta mais "
+        "recente e vão da mais antiga à mais recente. “Do começo” é a parte das saídas que veio "
+        f"das primeiras posições (até o número de saídas do dia, no mínimo {ritmo.HEAD_MIN}).</p>"
+        f"<p><b>Regular</b>: {ritmo.REGULAR_MIN_EXITS} saídas ou mais e semanas parecidas entre "
+        "si (o desvio fica abaixo da metade da média). <b>Irregular</b>: as outras com saída. "
+        "<b>Parada</b>: com processos e nenhuma saída. <b>Vazia</b>: nenhum processo nas seis "
+        f"semanas. <b>Dados incompletos</b>: menos de {ritmo.MIN_DAYS} dos {ritmo.DAYS} dias "
+        "coletados.</p></div>"
+        + filter_box("#ritmo", "tbody tr", "Filtrar por subfila ou grupo")
+        + '<div id="ritmo">'
+        + "".join(secoes)
+        + "</div>"
+    )
+    description = (
+        f"Ritmo das filas de análise da ANVISA: saídas por semana de {len(ritmos)} subfilas nas "
+        f"{ritmo.WEEKS} semanas até {fim.isoformat()}; "
+        f"{ritmo.contar(contagem['regular'], 'regular')}, "
+        f"{ritmo.contar(contagem['parada'], 'parada')}, sem data prevista."
+    )
+    (site / "ritmo.html").write_text(
+        page(
+            "Ritmo das filas",
+            body,
+            stamp=stamp,
+            url=f"{base_url}/ritmo.html",
+            description=description,
+            root="",
+            nav=nav,
+        ),
+        encoding="utf-8",
+    )
+    itens = []
+    for sub, r in sorted(ritmos.items()):
+        name, grupo, area = describe(catalog, sub)
+        itens.append(
+            {
+                "subfila": sub,
+                "nome": name,
+                "grupo": grupo,
+                "area": area,
+                "na_fila": r.na_fila,
+                "semanas": list(r.semanas),
+                "saidas": r.saidas,
+                "do_comeco": r.do_comeco,
+                "dias_com_dado": r.dias_com_dado,
+                "situacao": r.situacao,
+                "pagina": f"{base_url}/fila/{sub}.html",
+            }
+        )
+    (site / "ritmo.json").write_text(
+        json.dumps(
+            {"de": inicio.isoformat(), "ate": fim.isoformat(), "subfilas": itens},
+            ensure_ascii=False,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+
+
 def build_site(
     snapshots: Path,
     site: Path,
@@ -457,6 +592,8 @@ def build_site(
         + "."
     )
     org = {"@type": "Organization", "name": "anvisa-feeds", "url": REPO_URL}
+    # exits per week over the last six weeks, from every snapshot, not only the feed window
+    ritmos = ritmo.medir(snapshots)
     # e.g. "today's crawl failed": shown on every page so a stale site says so, loudly
     warn = f'<div class="box warn">{html.escape(notice)}</div>' if notice else ""
 
@@ -549,7 +686,8 @@ def build_site(
             + "\n",
             encoding="utf-8",
         )
-        body = warn + f"<h2>Mudanças em {newest_day.isoformat()}</h2>"
+        body = warn + ritmo_linha(ritmos.get(sub), root="../")
+        body += f"<h2>Mudanças em {newest_day.isoformat()}</h2>"
         events, queue_block = entries[0]["content"], ""
         if n >= FILTER_MIN_ROWS:
             # the filter sits right above the table, so split the entry content around it
@@ -600,9 +738,20 @@ def build_site(
             encoding="utf-8",
         )
 
+    ritmo_page(
+        site,
+        {s: ritmos[s] for s in history if s in ritmos},
+        catalog,
+        ritmo.janela(snapshots),
+        base_url=base_url,
+        stamp=stamp,
+        warn=warn,
+        nav=fila_nav("", cmed=bool(cmed)),
+    )
+
     # sitemap: the HTML pages only (feeds are not pages); lastmod is the real fetch time
     urlset = ET.Element("urlset", xmlns=SITEMAP)
-    pages = [(f"{base_url}/", meta["finished"])]
+    pages = [(f"{base_url}/", meta["finished"]), (f"{base_url}/ritmo.html", meta["finished"])]
     pages += [(f"{base_url}/fila/{sub}.html", meta["finished"]) for sub in sorted(history)]
     pages += cmed["pages"] if cmed else []
     for loc, lastmod in pages:

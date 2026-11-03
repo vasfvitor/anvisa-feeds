@@ -31,6 +31,11 @@ format; a git-ignored `NOTES.local.md` holds pending items when present.
   is what the portal build reads (thousands of requests made GitHub Pages answer 429); the schema is `cmed_dados_schema.md`, published as
   `dados/schema.md`. A key change there needs a follow-up in the portal. Its count is kept out
   of `meta.json` on purpose (that file is anvisa-hub's contract).
+- `ritmo.html` and `ritmo.json` (`ritmo.py`): exits per subfila per week over the six complete
+  weeks back from the latest snapshot, read from every snapshot (not limited by `--days`), with a
+  situação per subfila (regular, irregular, parada, vazia, dados incompletos) and its rule on the
+  page. No forecast date on purpose; the page says why only while its own numbers back it. Each
+  `fila/<id>.html` has one line about it. `meta.json` does not carry it (the hub's contract).
 - Contract versions, as in the anvisa-api manifest: `schema_version` in `produtos.json`,
   `todos.json` and `substancias.json` (`cmed_dados.SCHEMA_VERSION`) and in the root `meta.json`
   (`feeds.META_SCHEMA_VERSION`), all 1. Raise one only when a reader must change to keep reading (a

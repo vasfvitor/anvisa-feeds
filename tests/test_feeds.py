@@ -49,6 +49,15 @@ def test_build_site_from_two_days(client, tmp_path):
     assert "Última coleta bem-sucedida" in page and "17 de 17 subfilas" in page
     index = (site / "index.html").read_text(encoding="utf-8")
     assert "Dispositivos Médicos" in index and 'href="fila/167.xml"' in index
+    # ritmo: two days are far from the 35 of 42, so every subfila is "dados incompletos"
+    assert 'href="ritmo.html">Ritmo</a>' in index
+    rp = (site / "ritmo.html").read_text(encoding="utf-8")
+    assert 'id="s167"' in rp and "dados incompletos" in rp and "não dá data prevista" in rp
+    rj = json.loads((site / "ritmo.json").read_text(encoding="utf-8"))
+    r167 = next(s for s in rj["subfilas"] if s["subfila"] == 167)
+    assert r167["semanas"] == [0, 0, 0, 0, 0, 1] and r167["situacao"] == "incompleta"
+    assert rj["ate"] == "2026-09-07" and len(rj["subfilas"]) == result["feeds"]
+    assert "Ritmo nas últimas 6 semanas: 1 saída (" in page and 'href="../ritmo.html#s167"' in page
 
 
 def test_only_the_newest_entry_carries_the_queue(client, tmp_path):
@@ -81,9 +90,10 @@ def test_discoverability_files_and_head_tags(client, tmp_path):
 
     sm = "{http://www.sitemaps.org/schemas/sitemap/0.9}"
     urls = ET.parse(site / "sitemap.xml").getroot().findall(f"{sm}url")
-    assert len(urls) == result["feeds"] + 1  # index + one page per feed
+    assert len(urls) == result["feeds"] + 2  # index, ritmo + one page per feed
     locs = [u.find(f"{sm}loc").text for u in urls]
     assert locs[0] == "https://x.test/f/" and "https://x.test/f/fila/167.html" in locs
+    assert "https://x.test/f/ritmo.html" in locs
     assert not any(loc.endswith(".xml") for loc in locs)
     assert {u.find(f"{sm}lastmod").text for u in urls} == {finished}
 
