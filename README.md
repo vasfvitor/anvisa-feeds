@@ -39,6 +39,9 @@ warning on every page (`build --notice`), so staleness is visible rather than si
 workflow" with `build_only` rebuilds the site without any requests. A separate `ci` workflow
 lints, tests and builds on every push and pull request.
 
+When a run turns red, [RUNBOOK.md](RUNBOOK.md) (in Portuguese) says what the message means, whether
+the site was affected and what to do.
+
 A subfila with nothing queued answers an empty 404 and is recorded as empty. A day whose
 crawl failed for a subfila produces no events for it; absence of data is not a change. Every page carries the last successful fetch time, so a broken cron shows.
 

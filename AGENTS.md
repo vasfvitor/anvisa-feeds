@@ -67,3 +67,8 @@ anvisa-api README, community posts) is the user's.
 Commit when a unit of work is complete, one subject per commit, no attribution trailers.
 Commits are SSH-signed, so `git commit` runs outside the sandbox: keep it as the only command
 on its line. Pushing, Pages settings and repository secrets are the user's.
+
+`RUNBOOK.md` (Portuguese, for the user, not for an agent) explains every way a workflow here turns
+red. Adding or changing an alarm (`::error::`, `::warning::`, an `exit 1` or a raise that ends a
+workflow) or an error message means updating its entry in the same commit, quoting the message
+exactly as the log prints it.
