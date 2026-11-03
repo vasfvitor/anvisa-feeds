@@ -7,7 +7,7 @@ format; a git-ignored `NOTES.local.md` holds pending items when present.
 ## Facts to keep straight
 
 - The library lives in GitHub repo `vasfvitor/anvisa-api` (PyPI `anvisa`), not in a repo named
-  `anvisa`. This repo pins it from PyPI (`pyproject.toml`, `anvisa>=0.5.0,<1`); a breaking
+  `anvisa`. This repo pins it from PyPI (`pyproject.toml`, `anvisa[dados]>=0.8.0,<1`); a breaking
   rename there means a follow-up here.
 - The site is served at `https://anvisa.feeds.abelhaninja.de` since 2026-10-09. The github.io
   address 301s there and nothing in this repo should handle it: the user explicitly wanted no
@@ -18,7 +18,7 @@ format; a git-ignored `NOTES.local.md` holds pending items when present.
   snapshot tooling and the unauthenticated portal endpoints.
 - The second feed family is CMED's monthly price list (`cmed.py`, `cmed_site.py`, pages under
   `site/cmed/`). No credentials: two conditional GETs a day on dados.anvisa.gov.br, parsed by
-  `anvisa.dados.cmed` from the library (hence `anvisa>=0.7.0`). Snapshots live in
+  `anvisa.dados.cmed` from the library (0.7.0 or later; 0.8.0 also refuses an unknown ICMS rate). Snapshots live in
   `snapshots/cmed/<stamp>.jsonl.xz` (arrays under a `columns` line; a month is about 3 MB),
   invisible to the fila globs, which read `snapshots/*.jsonl.gz` only. The raw CSVs of a month
   go to the GitHub Release `cmed-<stamp>` (the workflow's cmed job), never to git; `raw/` is
