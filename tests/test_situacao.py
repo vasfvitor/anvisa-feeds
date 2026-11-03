@@ -7,6 +7,7 @@ from pathlib import Path
 
 import duckdb
 import httpx
+import pytest
 
 from anvisa_feeds import cmed_dados, situacao
 
@@ -58,6 +59,7 @@ def test_fetch_reads_the_paths_from_the_manifest(tmp_path):
     files = tables(tmp_path / "src")
     # the shape of the live manifest: tables keyed by name
     manifest = {
+        "schema_version": 1,
         "build_id": "b1",
         "built_at": "2026-10-28T00:08:51Z",
         "tables": {n: {"path": f"data/b1/{n}.parquet"} for n in situacao.TABLES},
@@ -77,6 +79,19 @@ def test_fetch_reads_the_paths_from_the_manifest(tmp_path):
     assert set(got) == set(situacao.TABLES)
     assert fonte == {"build_id": "b1", "built_at": "2026-10-28T00:08:51Z"}
     assert situacao.load(got)["103110182"]["ativo"] is False
+
+
+def test_fetch_refuses_a_manifest_version_it_does_not_read(tmp_path):
+    manifest = {"schema_version": 2, "build_id": "b9", "tables": {}}
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(200, json=manifest)
+
+    with (
+        httpx.Client(transport=httpx.MockTransport(handler)) as http,
+        pytest.raises(ValueError, match="schema_version 2"),
+    ):
+        situacao.fetch(tmp_path / "cache", manifest_url="https://x.test/a/manifest.json", http=http)
 
 
 def test_carregar_gives_none_when_the_source_fails(tmp_path):
@@ -106,6 +121,7 @@ def tabela_dcb(tmp: Path) -> Path:
 def manifest_dcb(titulo: str) -> dict:
     licenca = {"name": "CC BY-NC-SA 4.0", "url": "https://creativecommons.org/x"}
     return {
+        "schema_version": 1,
         "build_id": "b2",
         "built_at": "2026-11-01T16:19:34Z",
         "tables": {

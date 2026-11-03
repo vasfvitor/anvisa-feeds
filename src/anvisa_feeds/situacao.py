@@ -26,6 +26,9 @@ MANIFEST_URL = "https://vasfvitor.github.io/anvisa-api/manifest.json"
 TABLES = ("medicamentos_por_produto", "medidas")
 TABELA_DCB = "substancias_dcb"
 AREA_MEDICAMENTO = 1
+# the anvisa-api manifest version this module reads: it only changes when a reader must change
+# (anvisa-api CHANGELOG.dados.md), so another one means the tables may have moved
+SCHEMA_VERSION = 1
 
 
 @dataclass(frozen=True)
@@ -56,6 +59,11 @@ def _baixar(
         manifest = http.get(manifest_url)
         manifest.raise_for_status()
         data = manifest.json()
+        if data.get("schema_version") != SCHEMA_VERSION:
+            raise ValueError(
+                f"anvisa-api manifest: schema_version {data.get('schema_version')!r}, "
+                f"this code reads {SCHEMA_VERSION}"
+            )
         tables = data["tables"]  # {name: {path, rows, columns, …}}
         cache.mkdir(parents=True, exist_ok=True)
         out = {}
