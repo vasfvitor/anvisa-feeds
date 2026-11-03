@@ -127,6 +127,12 @@ def _compact(obj: object) -> str:
     return json.dumps(obj, ensure_ascii=False, separators=(",", ":")) + "\n"
 
 
+# The contract version of produtos.json, todos.json and substancias.json, as in the anvisa-api
+# manifest: a new field keeps it, a field removed, renamed or with another meaning raises it
+# (cmed_dados_schema.md, "Versão do contrato"); the portal refuses a version it does not know
+SCHEMA_VERSION = 1
+
+
 def write_dados(
     out: Path,
     rows: dict[str, dict],
@@ -152,9 +158,11 @@ def write_dados(
         (pasta / f"{p['registro_produto']}.json").write_text(_compact(p), encoding="utf-8")
     idx = indice(lista, stamp=stamp, publicado_em=publicado_em)
     (pasta.parent / "produtos.json").write_text(
-        _compact({**idx, "situacao_fonte": fonte}), encoding="utf-8"
+        _compact({"schema_version": SCHEMA_VERSION, **idx, "situacao_fonte": fonte}),
+        encoding="utf-8",
     )
     todos = {
+        "schema_version": SCHEMA_VERSION,
         "stamp": stamp,
         "publicado_em": publicado_em,
         "situacao_fonte": fonte,
@@ -164,6 +172,7 @@ def write_dados(
     nomes = dcb.nomes if dcb else {}
     desta_lista = sorted({p["substancia"] for p in lista} & nomes.keys())
     substancias = {
+        "schema_version": SCHEMA_VERSION,
         "fonte": dcb.fonte if dcb else None,
         "substancias": {s: nomes[s] for s in desta_lista},
     }

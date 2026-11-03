@@ -28,6 +28,7 @@ SITEMAP = "http://www.sitemaps.org/schemas/sitemap/0.9"
 SITE_NAME = "Filas de análise da ANVISA"
 REPO_URL = "https://github.com/vasfvitor/anvisa-feeds"
 FILTER_MIN_ROWS = 12  # below this a filter box is noise
+META_SCHEMA_VERSION = 1  # meta.json, the hub's contract (AGENTS.md)
 FOLD_MOVED_ABOVE = 8  # more position changes than this fold into a <details>
 
 # A small, intentional palette: one accent, two semantic colours for entered/left, the rest
@@ -774,6 +775,9 @@ def build_site(
     # meta.json: the latest crawl's meta plus catalog counts, for other sites (the hub) to read
     # without walking fila/<id>.json. Same keys as snapshots/<day>.meta.json, plus the totals.
     site_meta = {
+        # the contract version for the hub, as in the anvisa-api manifest: raised only when a reader
+        # must change to keep reading (a removed, renamed or redefined key), never for a new one
+        "schema_version": META_SCHEMA_VERSION,
         **meta,
         "feeds": len(history),
         "first_snapshot": all_days[0].isoformat(),

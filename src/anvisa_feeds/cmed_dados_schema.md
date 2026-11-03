@@ -8,6 +8,13 @@ lista de 09/10/2026) entram com `restricao_hospitalar: true`. A linha sem regist
 de fora. Preços em **centavos**, como na lista: cada alíquota é uma coluna da própria CMED, nenhuma é
 calculada aqui.
 
+## Versão do contrato
+
+`produtos.json`, `todos.json` e `substancias.json` trazem `schema_version`, hoje `1`, como o manifest do
+anvisa-api. Ela só muda quando quem lê precisa mudar para continuar lendo: um campo novo não muda a versão;
+um campo que sai, muda de nome ou de sentido muda. Os arquivos de antes de novembro de 2026 não têm a
+chave.
+
 ## `produtos.json`
 
 `{stamp, publicado_em, situacao_fonte, produtos: [...]}`. `stamp` é o mês da lista (`AAAAMMDD`),

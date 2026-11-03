@@ -186,9 +186,10 @@ def test_substancias_json_has_this_lists_names_and_says_when_they_were_not_read(
     fonte = {"build_id": "b2", "titulo": "t", "licenca": {"name": "n", "url": "u"}}
     nomes = {"LOSARTANA": ["losartana"], "FORA DA LISTA": ["outra"]}
     dcb = situacao.Dcb(fonte=fonte, nomes=nomes)
+    v = {"schema_version": cmed_dados.SCHEMA_VERSION}
     for d, esperado in (
-        (dcb, {"fonte": fonte, "substancias": {"LOSARTANA": ["losartana"]}}),
-        (None, {"fonte": None, "substancias": {}}),
+        (dcb, {**v, "fonte": fonte, "substancias": {"LOSARTANA": ["losartana"]}}),
+        (None, {**v, "fonte": None, "substancias": {}}),
     ):
         out = tmp_path / str(d is None)
         cmed_dados.write_dados(out, {"1": row}, stamp="s", publicado_em="p", dcb=d)
@@ -250,3 +251,4 @@ def test_index_files_say_whether_the_registration_source_was_read(tmp_path):
         for nome in ("produtos.json", "todos.json"):
             dados = json.loads((out / "dados" / nome).read_text(encoding="utf-8"))
             assert dados["situacao_fonte"] == esperado, nome
+            assert dados["schema_version"] == cmed_dados.SCHEMA_VERSION, nome

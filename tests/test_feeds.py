@@ -131,6 +131,7 @@ def test_discoverability_files_and_head_tags(client, tmp_path):
     latest = load_meta(snapshots, date(2026, 9, 7))
     assert {k: summary[k] for k in latest} == latest
     assert summary["feeds"] == result["feeds"] and summary["first_snapshot"] == "2026-09-06"
+    assert summary["schema_version"] == 1  # the hub's contract version
     assert summary["catalog"]["subfilas"] == result["feeds"] and summary["catalog"]["areas"] == 1
     assert summary["base_url"] == "https://x.test/f"
     # the day's movers: process 1 left subfila 167 (see next_day)

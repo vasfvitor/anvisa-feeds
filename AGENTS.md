@@ -31,6 +31,11 @@ format; a git-ignored `NOTES.local.md` holds pending items when present.
   is what the portal build reads (thousands of requests made GitHub Pages answer 429); the schema is `cmed_dados_schema.md`, published as
   `dados/schema.md`. A key change there needs a follow-up in the portal. Its count is kept out
   of `meta.json` on purpose (that file is anvisa-hub's contract).
+- Contract versions, as in the anvisa-api manifest: `schema_version` in `produtos.json`,
+  `todos.json` and `substancias.json` (`cmed_dados.SCHEMA_VERSION`) and in the root `meta.json`
+  (`feeds.META_SCHEMA_VERSION`), all 1. Raise one only when a reader must change to keep reading (a
+  key removed, renamed or redefined), never for a new key; the portal and the hub refuse a version
+  they do not know. `situacao.py` refuses an anvisa-api manifest whose `schema_version` is not 1.
 - Each product in `cmed/dados` also carries `situacao` (registration Ativo/Inativo, expiry) and
   `medidas` (ANVISA measures citing the registro), read at build time from two anvisa-api Parquet
   tables (`situacao.py`, about 1.5 MB through the Pages manifest, read locally with DuckDB from
