@@ -12,6 +12,7 @@ from __future__ import annotations
 import hashlib
 import html
 import json
+import re
 from collections import Counter
 from datetime import datetime
 from pathlib import Path
@@ -150,6 +151,37 @@ def row_cells(r: dict, *, group_by: str) -> str:
         + "".join(f'<td class="p">{money(r.get(f))}</td>' for f in PRICE_FIELDS)
         + f'<td class="d">{html.escape(r.get("regime_preco") or "")}</td>'
     )
+
+
+JOINERS = re.compile(r"([;+])")
+
+
+def with_breaks(text: str) -> str:
+    """<wbr> after each ";" and "+" of already escaped text (an escaped entity keeps its ";")."""
+    return JOINERS.sub(r"\1<wbr>", text)
+
+
+def breakable(name: str) -> str:
+    """A substância name as page HTML. Associations are written "A;B;C" or "A+B" with no space,
+    so a long one is a single word wider than a phone (168 characters for an amino-acid solution
+    on the list of 2026-10-09); <wbr> lets the line break after each joiner. Pages only: feed
+    titles and JSON keep the plain name."""
+    return with_breaks(html.escape(name))
+
+
+# A page's tables open with this (page_tables), so the filter box can be put before the first one
+PAGE_TABLE = '<div class="scroll"><table class="queue cmed"'
+
+CELL_TEXT = re.compile(r"(<td[^>]*>)([^<]*[;+][^<]*)(</td>)")
+
+
+def page_tables(content: str) -> str:
+    """A feed entry's tables as a page shows them: in a box that scrolls sideways, so on a phone
+    the table moves and the page does not, and marked `cmed`, whose first column is the product
+    (the fila tables' first column is a narrow position). A cell's text, never an attribute,
+    gets the breaks of `breakable`. The feed keeps its content as it is."""
+    content = CELL_TEXT.sub(lambda m: m[1] + with_breaks(m[2]) + m[3], content)
+    return content.replace('<table class="queue"', PAGE_TABLE).replace("</table>", "</table></div>")
 
 
 def rows_table(rows: list[dict], *, group_by: str, caption: str, table_id: str = "") -> str:
@@ -359,7 +391,7 @@ def build_cmed(
             f'<a href="../index.html">{TITLE}</a><span>›</span>'
             f"<a "
             f'href="../index.html#{kind}">{section}</a></nav>'
-            f"<h1>{html.escape(name)}</h1>"
+            f"<h1>{breakable(name)}</h1>"
             f'<p class="meta"><span>{n(count)} apresentações na lista de '
             f"{month_label(latest_stamp)}</span>{extra}"
             f'<a class="pill" href="{ident}.xml" title="Cole este endereço no seu leitor de '
@@ -385,10 +417,10 @@ def build_cmed(
             encoding="utf-8",
         )
         body = warn + f"<h2>Mudanças na lista de {month_label(newest_stamp)}</h2>"
-        content = entries[0]["content"]
+        content = page_tables(entries[0]["content"])
         table_block = ""
-        if count >= FILTER_MIN_ROWS and '<table class="queue"' in content:
-            i = content.index('<table class="queue"')
+        if count >= FILTER_MIN_ROWS and PAGE_TABLE in content:
+            i = content.index(PAGE_TABLE)
             content, table_block = content[:i], content[i:]
             table_block = (
                 feeds.filter_box("#rows", "tbody tr", "Filtrar por produto ou apresentação")
@@ -556,7 +588,7 @@ def build_cmed(
         k = len(by_subst.get(name, []))
         lines.append(
             f'<li><span class="t"><a '
-            f'href="substancia/{subst_slug[name]}.html">{html.escape(name)}</a></span>'
+            f'href="substancia/{subst_slug[name]}.html">{breakable(name)}</a></span>'
             f'<span class="n{"" if k else " zero"}">{f"{k} apres." if k else "saiu"}</span>'
             f'<a class="feed" href="substancia/{subst_slug[name]}.xml" title="Feed Atom desta '
             f'substância">feed</a></li>'
@@ -747,16 +779,16 @@ def highlight(
 
 def moves_table(moves: list[tuple[dict, int, int]], subst_slug: dict[str, str]) -> str:
     out = [
-        '<table class="queue"><thead><tr><th>Produto</th><th>Apresentação</th><th>Substância</th>'
+        PAGE_TABLE + "><thead><tr><th>Produto</th><th>Apresentação</th><th>Substância</th>"
         '<th>PF antes</th><th>PF depois</th><th class="d">Variação</th></tr></thead><tbody>'
     ]
     for e, old, new in moves:
         r = e["row"]
         s = r.get("substancia") or ""
         link = (
-            f'<a href="substancia/{subst_slug[s]}.html">{html.escape(s)}</a>'
+            f'<a href="substancia/{subst_slug[s]}.html">{breakable(s)}</a>'
             if s in subst_slug
-            else html.escape(s)
+            else breakable(s)
         )
         out.append(
             f"<tr><td>{html.escape(r.get('produto') or '')}</td>"
@@ -764,7 +796,7 @@ def moves_table(moves: list[tuple[dict, int, int]], subst_slug: dict[str, str]) 
             f'<td>{link}</td><td class="p">{money(old)}</td><td class="p">{money(new)}</td>'
             f'<td class="d">{pct(old, new)}</td></tr>'
         )
-    out.append("</tbody></table>")
+    out.append("</tbody></table></div>")
     return "".join(out)
 
 

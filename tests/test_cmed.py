@@ -7,6 +7,7 @@ import csv
 import io
 import json
 import lzma
+import re
 from datetime import date
 from pathlib import Path
 from xml.etree import ElementTree as ET
@@ -300,6 +301,33 @@ def test_second_month_diffs_and_groups(dados, client, tmp_path):
         (cmed_dir / "substancia" / "nova-substancia.json").read_text(encoding="utf-8")
     )
     assert data["mudancas"][0]["type"] == "entered" and "old" not in data["mudancas"][0]
+
+
+def test_pages_fit_a_phone_and_the_feeds_keep_their_content(dados, client, tmp_path):
+    _, site, _ = site_with_months(dados, client, tmp_path, 2)
+    cmed_dir = site / "cmed"
+    slug = "21-acetato-de-dexametasona-clotrimazol"
+    index = (cmed_dir / "index.html").read_text(encoding="utf-8")
+    # an association is one word without spaces: the page lets it break after each ";"
+    assert "DEXAMETASONA;<wbr>CLOTRIMAZOL" in index
+    page = (cmed_dir / "substancia" / f"{slug}.html").read_text(encoding="utf-8")
+    assert "<h1>21-ACETATO DE DEXAMETASONA;<wbr>CLOTRIMAZOL</h1>" in page
+    # every table scrolls inside its own box and is marked cmed; the index highlights too
+    tables = page.count("<table")
+    assert tables and page.count(cmed_site.PAGE_TABLE) == tables
+    assert page.count("</table></div>") == tables
+    assert cmed_site.PAGE_TABLE in index
+    # in a table cell too (the laboratório page lists the substância), never in an attribute
+    lab = (cmed_dir / "laboratorio" / "18459628000115.html").read_text(encoding="utf-8")
+    assert "<td>21-ACETATO DE DEXAMETASONA;<wbr>CLOTRIMAZOL</td>" in lab
+    assert not re.search(r'="[^"]*<wbr>', lab)
+    # the feeds of the same pages are untouched
+    for feed_path in (
+        cmed_dir / "substancia" / f"{slug}.xml",
+        cmed_dir / "laboratorio" / "18459628000115.xml",
+    ):
+        feed = feed_path.read_text(encoding="utf-8")
+        assert "scroll" not in feed and "wbr" not in feed and 'class="queue"' in feed
 
 
 def test_long_substancia_names_get_short_stable_slugs():

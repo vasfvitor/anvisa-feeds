@@ -97,6 +97,11 @@ table.queue td{padding:.35rem .5rem .35rem 0;border-bottom:1px solid var(--line)
 table.queue td:first-child,table.queue th:first-child{text-align:right;color:var(--muted);width:4ch;
 padding-right:.75rem}table.queue td.p{white-space:nowrap}table.queue td.d{white-space:nowrap;
 color:var(--muted)}
+.scroll{overflow-x:auto}
+table.queue.cmed td:first-child,table.queue.cmed th:first-child{text-align:left;color:var(--fg);
+width:auto;padding-right:.5rem}
+table.queue.cmed td:not(.p):not(.d){min-width:7rem}
+h1,ul.filas .t{overflow-wrap:anywhere}
 .empty{color:var(--muted);font-style:italic}
 footer{border-top:1px solid var(--line);color:var(--muted);font-size:.85em;padding:1rem 0 2rem}
 footer p{margin:.25rem 0}
