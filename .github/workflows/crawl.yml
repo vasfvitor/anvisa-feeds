@@ -53,7 +53,10 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 60
     outputs:
-      day: ${{ steps.day.outputs.day }}   # the build reads this day's meta, even past midnight
+      day: ${{ steps.day.outputs.day }}
+      # the Count step's verdict, the one place with the 10% rule: the build's notice follows it
+      coleta: ${{ steps.coleta.outputs.estado }}
+      faltaram: ${{ steps.coleta.outputs.faltaram }}
     permissions:
       contents: write   # commit the snapshot
       issues: write     # the alarm issue (alerta)
@@ -103,6 +106,7 @@ jobs:
           echo "$falhas of $total subfilas not collected"
           {
             if [ $((falhas * 10)) -gt "$total" ]; then echo "estado=ativo"; else echo "estado=normal"; fi
+            echo "faltaram=$falhas"
             echo "titulo=Coleta incompleta: $falhas de $total subfilas não responderam"
             echo "corpo<<FIM_DO_CORPO"
             echo "Mais de 10% das subfilas não responderam na coleta de $DAY. As que falharam mostram a última fila coletada, e todas as páginas têm o aviso de coleta incompleta."
@@ -195,22 +199,18 @@ jobs:
       - name: Build the site
         env:
           CRAWL: ${{ needs.crawl.result }}
-          DAY: ${{ needs.crawl.outputs.day }}
-        # the notice reads the day's meta, not the crawl job's result: an incomplete crawl (more than
-        # 10% missing) no longer turns that job red, it opens an issue
+          COLETA: ${{ needs.crawl.outputs.coleta }}
+          FALTARAM: ${{ needs.crawl.outputs.faltaram }}
+        # the notice follows the crawl job's Count step (an incomplete crawl no longer turns that job
+        # red, it opens an issue). No verdict from it and a failed crawl job means the crawl failed
+        # before that step: nothing was collected, or the snapshot never reached main.
         run: |
           extra=()
-          coletadas=0 falhas=0 total=0
-          meta="snapshots/$DAY.meta.json"
-          if [ -n "$DAY" ] && [ -f "$meta" ]; then
-            coletadas=$(jq .subfilas_crawled "$meta"); falhas=$(jq '.failed | length' "$meta")
-            total=$(jq .subfilas_total "$meta")
-          fi
-          if [ "$CRAWL" = failure ] && [ "$coletadas" -eq 0 ]; then
-            extra=(--notice "A coleta de hoje falhou; estes dados são da última coleta bem-sucedida.")
-          elif [ "$total" -gt 0 ] && [ $((falhas * 10)) -gt "$total" ]; then
+          if [ "$COLETA" = ativo ]; then
             # a partial crawl was committed: its failed subfilas show their last collected queue
-            extra=(--notice "A coleta de hoje ficou incompleta: $falhas subfilas não responderam e mostram a última fila coletada.")
+            extra=(--notice "A coleta de hoje ficou incompleta: $FALTARAM subfilas não responderam e mostram a última fila coletada.")
+          elif [ "$CRAWL" = failure ] && [ -z "$COLETA" ]; then
+            extra=(--notice "A coleta de hoje falhou; estes dados são da última coleta bem-sucedida.")
           fi
           uv run anvisa-feeds build --snapshots snapshots --site site "${extra[@]}"
       # what the alarms after the deploy check; read here, where the site is, without failing,
