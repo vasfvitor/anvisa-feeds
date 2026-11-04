@@ -13,7 +13,7 @@ Quem cria ou muda um alarme ou uma mensagem de erro atualiza este arquivo no mes
 
 | Workflow / job | Trecho da mensagem | Entrada |
 |---|---|---|
-| crawl / crawl | `subfilas were not collected today` | [Coleta incompleta](#coleta-incompleta) |
+| crawl / crawl | issue "Coleta incompleta" | [Coleta incompleta](#coleta-incompleta) |
 | crawl / crawl | `"subfilas_crawled": 0`, `from Cloudflare`, `token request failed` | [Nenhuma subfila respondeu](#nenhuma-subfila-respondeu) |
 | crawl / crawl | `no ANVISA credentials` | [Credenciais ausentes](#credenciais-ausentes) |
 | crawl / crawl | `Traceback`, `ValidationError` | [Coleta parou no meio](#coleta-parou-no-meio) |
@@ -22,8 +22,8 @@ Quem cria ou muda um alarme ou uma mensagem de erro atualiza este arquivo no mes
 | crawl / cmed | `update anvisa/dados/cmed.py`, `ALIQUOTAS` | [Formato da CMED mudou](#formato-da-cmed-mudou) |
 | crawl / cmed | `HTTP`, `no Last-Modified header` | [Download da CMED falhou](#download-da-cmed-falhou) |
 | crawl / cmed | `gh release create` | [Release da CMED falhou](#release-da-cmed-falhou) |
-| crawl / deploy | `went out without the registration status`, `without the official names` | [anvisa-api não foi lido](#anvisa-api-não-foi-lido) |
-| crawl / deploy | `the CMED list is missing or` | [Lista da CMED velha](#lista-da-cmed-velha) |
+| crawl / deploy | issue "O cmed/dados saiu sem os dados do anvisa-api" | [anvisa-api não foi lido](#anvisa-api-não-foi-lido) |
+| crawl / deploy | issue "Lista da CMED com N dias", `the CMED list is missing` | [Lista da CMED velha](#lista-da-cmed-velha) |
 | crawl / build, deploy | `no snapshots to build from`, `Traceback`, deploy | [Build ou deploy falhou](#build-ou-deploy-falhou) |
 | ci | ruff, pytest, build | [Lint, formato ou testes](#lint-formato-ou-testes) |
 
@@ -41,15 +41,21 @@ Roda todo dia às 09:00 UTC (06:00 em Brasília). Também roda, só com build, q
 Uma falha num job não apaga o trabalho dos outros. Quando a coleta falha, o site é montado com o último
 snapshot bom e um aviso em todas as páginas.
 
+Três causas de fora do código não deixam o run vermelho: abrem uma issue com o label `alerta`, que fecha
+sozinha quando a situação normaliza (ver o RUNBOOK do hub, "Issues de alerta"). São elas: coleta
+incompleta, `cmed/dados` sem os dados do anvisa-api e lista da CMED com mais de 45 dias. O run fica verde,
+com um aviso amarelo.
+
 **Para rodar de novo:** Actions → crawl → "Run workflow" no `main`. Não use "Re-run jobs": ele parte do
 commit antigo e o `git pull --rebase` do snapshot do dia entra em conflito. Com `build_only` marcado, ele
 só remonta o site, sem fazer nenhuma requisição à ANVISA.
 
 ### Coleta incompleta
 
-- **Onde aparece:** job crawl, passo "Fail when more than 10% of the subfilas were not collected".
-- **Mensagem:** `::error::N of M subfilas were not collected today`. Antes, no passo Crawl, uma linha por
-  subfila: `subfila <id>: <Erro>: <mensagem>`. Por exemplo,
+- **Onde aparece:** a issue "Coleta incompleta: N de M subfilas não responderam", aberta pelo job crawl
+  (passo "Alarm issue for an incomplete crawl"). O run fica verde.
+- **Mensagem:** a issue lista as subfilas, com o erro de cada uma, como no passo Crawl:
+  `subfila <id>: <Erro>: <mensagem>`. Por exemplo,
   `RateLimitError: HTTP 429: rate limit exceeded (25 burst, 1 request/s)`, ou `ReadTimeout` depois de
   `retry 2/2`.
 - **O que quer dizer:** mais de 10% das subfilas não responderam. O snapshot parcial já foi commitado e
@@ -57,7 +63,8 @@ só remonta o site, sem fazer nenhuma requisição à ANVISA.
 - **O site foi afetado?** Saiu parcial. As subfilas que falharam mostram a última fila coletada, com
   "não coletada em <dia>", e todas as páginas têm o aviso "A coleta de hoje ficou incompleta".
 - **Agir ou esperar:** esperar. A API da ANVISA estava instável ou o limite de requisições foi atingido.
-- **Pedir ajuda quando:** acontecer vários dias seguidos.
+  A issue fecha sozinha na primeira coleta com 10% de falhas ou menos.
+- **Pedir ajuda quando:** a issue ficar aberta vários dias seguidos.
 
 ### Nenhuma subfila respondeu
 
@@ -122,8 +129,12 @@ a causa ser resolvida.
 - **O que quer dizer:** a lista nova tem menos de 95% das linhas da anterior. O job recusa, para não
   publicar uma lista cortada.
 - **Agir ou esperar:** esperar um dia. Se a CMED publicou um arquivo incompleto, ela costuma corrigir.
-- **Pedir ajuda quando:** repetir. Se a lista encolheu de verdade, a coleta desse mês precisa ser feita à
-  mão, porque o workflow não aceita a opção `--min-rows-ratio`.
+- **Se a lista encolheu de verdade** (a CMED tirou produtos), aceite a lista nova uma vez:
+  1. confira na página da CMED que a lista nova está certa;
+  2. Actions → crawl → "Run workflow", com `cmed_min_rows_ratio` menor que a proporção da mensagem (N
+     dividido por M). Por exemplo, 24.000 contra 26.000 dá 0,92: use `0.9`;
+  3. o run seguinte, agendado, volta ao padrão (0.95).
+- **Pedir ajuda quando:** não tiver certeza de que a lista nova está certa.
 
 ### Formato da CMED mudou
 
@@ -164,11 +175,11 @@ a causa ser resolvida.
 
 ### anvisa-api não foi lido
 
-- **Onde aparece:** job deploy, passo "Check the anvisa-api sources and the CMED list's age", depois do
-  deploy.
-- **Mensagens:**
-  - `::error::cmed/dados went out without the registration status and measures (anvisa-api could not be read)`
-  - `::error::cmed/dados went out without the official names (anvisa-api could not be read)`
+- **Onde aparece:** a issue "O cmed/dados saiu sem os dados do anvisa-api", aberta pelo job deploy depois
+  do deploy. O run fica verde.
+- **Mensagens**, no log do passo "Check the anvisa-api sources and the CMED list's age":
+  - `cmed/dados went out without the registration status and measures (anvisa-api could not be read)`
+  - `cmed/dados went out without the official names (anvisa-api could not be read)`
   - No log do job build: `situação dos registros: fonte indisponível (...)` e
     `nomes oficiais (DCB): fonte indisponível (...)`.
 - **O que quer dizer:** o build não conseguiu ler as tabelas do anvisa-api. São elas que dizem se cada
@@ -180,20 +191,22 @@ a causa ser resolvida.
   1. Abrir o [RUNBOOK do anvisa-api](https://github.com/vasfvitor/anvisa-api/blob/main/RUNBOOK.md) e ver
      se o `dados` de lá está vermelho.
   2. Se a mensagem do build disser `schema_version`, o contrato do anvisa-api mudou. Pedir ajuda.
-  3. Senão, esperar. O próximo run lê de novo.
+  3. Senão, esperar. O próximo run lê de novo, e a issue fecha sozinha quando o build voltar a ler o
+     anvisa-api.
 
 ### Lista da CMED velha
 
-- **Onde aparece:** o mesmo passo, depois do deploy.
-- **Mensagem:** `::error::the CMED list is missing or N days old`
+- **Onde aparece:** a issue "Lista da CMED com N dias", aberta pelo job deploy. O run fica verde.
 - **O que quer dizer:** a lista da CMED publicada tem mais de 45 dias. A CMED publica uma por mês. A lista
-  atual é de 09/10/2026, então o primeiro vermelho possível é por volta de 24/11/2026.
+  atual é de 09/10/2026, então a issue pode abrir por volta de 24/11/2026.
 - **O site foi afetado?** As páginas mostram a lista antiga. Os preços continuam valendo até a CMED
   publicar outra.
 - **Agir ou esperar:** esperar. Se quiser conferir, a página da CMED é
   https://www.gov.br/anvisa/pt-br/assuntos/medicamentos/cmed/precos.
 - **Pedir ajuda quando:** a CMED publicou uma lista nova e o job cmed não a pegou (ver as entradas
   acima).
+- **Vermelho, com `::error::the CMED list is missing`:** o site saiu sem lista da CMED nenhuma. Isso não
+  é atraso da CMED, é um problema no build. Pedir ajuda.
 
 ### Build ou deploy falhou
 

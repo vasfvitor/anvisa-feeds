@@ -10,6 +10,10 @@ name: crawl
 # The cmed job runs after the crawl (same push sequence, no race) and only commits when the
 # monthly list changed. "Run workflow" with build_only rebuilds the site from the committed
 # snapshots without spending any requests.
+#
+# Red is for what needs a change here. A cause outside the code (a crawl with more than 10% of the
+# subfilas missing, cmed/dados without anvisa-api's data, a CMED list older than 45 days) opens an
+# issue instead (the alerta action from anvisa-hub), closed when it clears: see RUNBOOK.md.
 
 on:
   schedule:
@@ -29,6 +33,12 @@ on:
         description: "Rebuild and deploy the site from committed snapshots, no crawl"
         type: boolean
         default: false
+      cmed_min_rows_ratio:
+        description: >-
+          Only when CMED's list really shrank: accept it with fewer rows than this share of the
+          previous month, 0 to 1 (empty keeps the default, 0.95). RUNBOOK.md, "Lista da CMED encolheu".
+        type: string
+        default: ""
 
 permissions:
   contents: read
@@ -46,6 +56,7 @@ jobs:
       day: ${{ steps.day.outputs.day }}   # the build reads this day's meta, even past midnight
     permissions:
       contents: write   # commit the snapshot
+      issues: write     # the alarm issue (alerta)
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1   # v7.0.1
       - uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d   # v10.0.1
@@ -80,17 +91,35 @@ jobs:
           git push || (git pull --rebase origin main && git push) \
                    || (sleep 30 && git pull --rebase origin main && git push)
       # after the commit, so a partial crawl is still kept and published (its failed subfilas
-      # say "não coletada"), but the run goes red instead of looking like a normal day
-      - name: Fail when more than 10% of the subfilas were not collected
+      # say "não coletada"). More than 10% missing opens the "Coleta incompleta" issue; the run
+      # stays green, and the build job still puts the notice on every page.
+      - name: Count the subfilas that were not collected
+        id: coleta
         env:
+          DAY: ${{ steps.day.outputs.day }}
           META: snapshots/${{ steps.day.outputs.day }}.meta.json
         run: |
           total=$(jq .subfilas_total "$META"); falhas=$(jq '.failed | length' "$META")
           echo "$falhas of $total subfilas not collected"
-          if [ $((falhas * 10)) -gt "$total" ]; then
-            echo "::error::$falhas of $total subfilas were not collected today"
-            exit 1
-          fi
+          {
+            if [ $((falhas * 10)) -gt "$total" ]; then echo "estado=ativo"; else echo "estado=normal"; fi
+            echo "titulo=Coleta incompleta: $falhas de $total subfilas não responderam"
+            echo "corpo<<FIM_DO_CORPO"
+            echo "Mais de 10% das subfilas não responderam na coleta de $DAY. As que falharam mostram a última fila coletada, e todas as páginas têm o aviso de coleta incompleta."
+            echo
+            jq -r '.failed[:40][] | "- subfila \(.subfila): \(.error)"' "$META"
+            [ "$falhas" -gt 40 ] && echo "- e mais $((falhas - 40))"
+            echo "FIM_DO_CORPO"
+          } >> "$GITHUB_OUTPUT"
+      - name: Alarm issue for an incomplete crawl
+        if: ${{ !cancelled() }}
+        uses: vasfvitor/anvisa-hub/.github/actions/alerta@main
+        with:
+          chave: feeds-coleta-incompleta
+          titulo: ${{ steps.coleta.outputs.titulo }}
+          estado: ${{ steps.coleta.outputs.estado }}
+          corpo: ${{ steps.coleta.outputs.corpo }}
+          runbook: https://github.com/vasfvitor/anvisa-feeds/blob/main/RUNBOOK.md#coleta-incompleta
 
   cmed:
     # CMED's price list changes once a month: two conditional GETs a day (no credentials) and,
@@ -112,8 +141,11 @@ jobs:
       - run: uv sync --locked
       - id: cmed
         name: Fetch the price list when it changed
+        env:
+          MIN_ROWS: ${{ inputs.cmed_min_rows_ratio }}
         run: |
-          meta=$(uv run anvisa-feeds crawl-cmed --snapshots snapshots/cmed --raw-dir raw/cmed)
+          meta=$(uv run anvisa-feeds crawl-cmed --snapshots snapshots/cmed --raw-dir raw/cmed \
+            ${MIN_ROWS:+--min-rows-ratio "$MIN_ROWS"})
           echo "$meta"
           echo "changed=$(jq -r 'if .unchanged then "false" else "true" end' <<<"$meta")" >> "$GITHUB_OUTPUT"
           echo "stamp=$(jq -r '.stamp // ""' <<<"$meta")" >> "$GITHUB_OUTPUT"
@@ -161,17 +193,24 @@ jobs:
           enable-cache: true
       - run: uv sync --locked
       - name: Build the site
+        env:
+          CRAWL: ${{ needs.crawl.result }}
+          DAY: ${{ needs.crawl.outputs.day }}
+        # the notice reads the day's meta, not the crawl job's result: an incomplete crawl (more than
+        # 10% missing) no longer turns that job red, it opens an issue
         run: |
           extra=()
-          if [ "${{ needs.crawl.result }}" = "failure" ]; then
+          coletadas=0 falhas=0 total=0
+          meta="snapshots/$DAY.meta.json"
+          if [ -n "$DAY" ] && [ -f "$meta" ]; then
+            coletadas=$(jq .subfilas_crawled "$meta"); falhas=$(jq '.failed | length' "$meta")
+            total=$(jq .subfilas_total "$meta")
+          fi
+          if [ "$CRAWL" = failure ] && [ "$coletadas" -eq 0 ]; then
+            extra=(--notice "A coleta de hoje falhou; estes dados são da última coleta bem-sucedida.")
+          elif [ "$total" -gt 0 ] && [ $((falhas * 10)) -gt "$total" ]; then
             # a partial crawl was committed: its failed subfilas show their last collected queue
-            meta="snapshots/${{ needs.crawl.outputs.day }}.meta.json"
-            if [ -f "$meta" ] && [ "$(jq .subfilas_crawled "$meta")" -gt 0 ]; then
-              n=$(jq '.failed | length' "$meta")
-              extra=(--notice "A coleta de hoje ficou incompleta: $n subfilas não responderam e mostram a última fila coletada.")
-            else
-              extra=(--notice "A coleta de hoje falhou; estes dados são da última coleta bem-sucedida.")
-            fi
+            extra=(--notice "A coleta de hoje ficou incompleta: $falhas subfilas não responderam e mostram a última fila coletada.")
           fi
           uv run anvisa-feeds build --snapshots snapshots --site site "${extra[@]}"
       # what the alarms after the deploy check; read here, where the site is, without failing,
@@ -197,6 +236,7 @@ jobs:
     permissions:
       pages: write
       id-token: write
+      issues: write   # the alarm issues (alerta)
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
@@ -204,28 +244,51 @@ jobs:
       - id: deployment
         uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346   # v5.0.1
 
-      # after the deploy, so what was collected is always published; red when the site went out
-      # without the registration data or the official names, or with a CMED list older than a
-      # month and a half
+      # after the deploy, so what was collected is always published. The site going out without
+      # the registration data or the official names (anvisa-api could not be read) and a CMED list
+      # older than a month and a half open issues; a CMED list missing altogether stays red.
       - name: Check the anvisa-api sources and the CMED list's age
+        id: fontes
         if: ${{ always() }}
         env:
           SITUACAO: ${{ needs.build.outputs.situacao_build }}
           DCB: ${{ needs.build.outputs.dcb_build }}
           CMED_DIAS: ${{ needs.build.outputs.cmed_dias }}
         run: |
-          falhou=0
           echo "registration build: ${SITUACAO:-none}; official names build: ${DCB:-none}; CMED list: ${CMED_DIAS:-?} days old"
-          if [ -z "$SITUACAO" ]; then
-            echo "::error::cmed/dados went out without the registration status and measures (anvisa-api could not be read)"
-            falhou=1
+          faltou=""
+          [ -n "$SITUACAO" ] || faltou="a situação dos registros e as medidas"
+          [ -n "$DCB" ] || faltou="${faltou:+$faltou e }os nomes oficiais (DCB)"
+          {
+            if [ -n "$faltou" ]; then echo "anvisa_estado=ativo"; else echo "anvisa_estado=normal"; fi
+            echo "anvisa_corpo=O cmed/dados saiu sem $faltou, porque o build não conseguiu ler o anvisa-api. Preços e feeds saíram normais."
+            if [ -n "$CMED_DIAS" ]; then
+              if [ "$CMED_DIAS" -gt 45 ]; then echo "cmed_estado=ativo"; else echo "cmed_estado=normal"; fi
+            fi
+            echo "cmed_titulo=Lista da CMED com $CMED_DIAS dias"
+            echo "cmed_corpo=A lista de preços da CMED publicada tem $CMED_DIAS dias. A CMED publica uma por mês; as páginas seguem com a lista atual."
+          } >> "$GITHUB_OUTPUT"
+          [ -n "$SITUACAO" ] || echo "cmed/dados went out without the registration status and measures (anvisa-api could not be read)"
+          [ -n "$DCB" ] || echo "cmed/dados went out without the official names (anvisa-api could not be read)"
+          if [ -z "$CMED_DIAS" ]; then
+            echo "::error::the CMED list is missing"
+            exit 1
           fi
-          if [ -z "$DCB" ]; then
-            echo "::error::cmed/dados went out without the official names (anvisa-api could not be read)"
-            falhou=1
-          fi
-          if [ -z "$CMED_DIAS" ] || [ "$CMED_DIAS" -gt 45 ]; then
-            echo "::error::the CMED list is missing or ${CMED_DIAS} days old"
-            falhou=1
-          fi
-          exit "$falhou"
+      - name: Alarm issue for cmed/dados without anvisa-api's data
+        if: ${{ always() }}
+        uses: vasfvitor/anvisa-hub/.github/actions/alerta@main
+        with:
+          chave: feeds-anvisa-api-nao-lido
+          titulo: O cmed/dados saiu sem os dados do anvisa-api
+          estado: ${{ steps.fontes.outputs.anvisa_estado }}
+          corpo: ${{ steps.fontes.outputs.anvisa_corpo }}
+          runbook: https://github.com/vasfvitor/anvisa-feeds/blob/main/RUNBOOK.md#anvisa-api-não-foi-lido
+      - name: Alarm issue for an old CMED list
+        if: ${{ always() }}
+        uses: vasfvitor/anvisa-hub/.github/actions/alerta@main
+        with:
+          chave: feeds-cmed-velha
+          titulo: ${{ steps.fontes.outputs.cmed_titulo }}
+          estado: ${{ steps.fontes.outputs.cmed_estado }}
+          corpo: ${{ steps.fontes.outputs.cmed_corpo }}
+          runbook: https://github.com/vasfvitor/anvisa-feeds/blob/main/RUNBOOK.md#lista-da-cmed-velha
