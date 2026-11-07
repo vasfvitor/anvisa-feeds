@@ -153,18 +153,25 @@ jobs:
           echo "$meta"
           echo "changed=$(jq -r 'if .unchanged then "false" else "true" end' <<<"$meta")" >> "$GITHUB_OUTPUT"
           echo "stamp=$(jq -r '.stamp // ""' <<<"$meta")" >> "$GITHUB_OUTPUT"
+      # also on a second run for the same month (say, after a run that created the Release and then
+      # failed to push): the Release is then updated with this run's files instead of failing
       - name: Keep the month's raw files in a Release
         if: steps.cmed.outputs.changed == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
           STAMP: ${{ steps.cmed.outputs.stamp }}
         run: |
-          notes=$(jq -r '.files[] | "\(.name): \(.bytes) bytes, sha256 \(.sha256), Last-Modified \(.last_modified), from \(.url)"' "snapshots/cmed/$STAMP.meta.json")
-          gh release create "cmed-$STAMP" raw/cmed/*.csv \
-            --title "CMED $STAMP" \
-            --notes "The two files of CMED's price list as ANVISA published them on dados.anvisa.gov.br, unchanged. Snapshot snapshots/cmed/$STAMP.jsonl.xz is derived from them.
+          files=$(jq -r '.files[] | "\(.name): \(.bytes) bytes, sha256 \(.sha256), Last-Modified \(.last_modified), from \(.url)"' "snapshots/cmed/$STAMP.meta.json")
+          notes="The two files of CMED's price list as ANVISA published them on dados.anvisa.gov.br, unchanged. Snapshot snapshots/cmed/$STAMP.jsonl.xz is derived from them.
 
-          $notes"
+          $files"
+          if gh release view "cmed-$STAMP" > /dev/null 2>&1; then
+            echo "Release cmed-$STAMP already exists: its files and notes are replaced by this run's"
+            gh release upload "cmed-$STAMP" raw/cmed/*.csv --clobber
+            gh release edit "cmed-$STAMP" --notes "$notes"
+          else
+            gh release create "cmed-$STAMP" raw/cmed/*.csv --title "CMED $STAMP" --notes "$notes"
+          fi
       - name: Commit and push the snapshot
         if: steps.cmed.outputs.changed == 'true'
         run: |

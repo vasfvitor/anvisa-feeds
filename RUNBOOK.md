@@ -173,10 +173,13 @@ a causa ser resolvida.
 ### Release da CMED falhou
 
 - **Onde aparece:** passo "Keep the month's raw files in a Release".
-- **O que quer dizer:** quase sempre, a Release `cmed-<data>` já existe. Isso acontece quando o mesmo mês
-  é coletado duas vezes, por exemplo depois de um run que criou a Release e falhou no push.
+- **O que quer dizer:** o GitHub recusou criar ou atualizar a Release `cmed-<data>` (permissão, limite ou
+  instabilidade). Rodar duas vezes no mesmo mês não é mais a causa: desde 07/11/2026, quando a Release já
+  existe, o log mostra `Release cmed-<data> already exists: its files and notes are replaced by this
+  run's`, e o passo segue.
 - **O site foi afetado?** O mês novo não entra; as páginas ficam com o anterior.
-- **Agir ou esperar:** pedir ajuda. É um problema conhecido: este passo não aceita rodar duas vezes.
+- **Agir ou esperar:** rodar de novo (Actions → crawl → "Run workflow"). Se falhar outra vez com a mesma
+  mensagem, pedir ajuda.
 
 ## crawl / jobs build e deploy
 
@@ -250,8 +253,6 @@ Achados em 2026-11-03, ainda sem correção.
   ANVISA tirou aparece como vazia.
 - **Sem alarme de idade da fila.** Se o cron parar, nada fica vermelho. Só a linha "Última coleta
   bem-sucedida" nas páginas mostra. Fase 2.
-- **A Release da CMED não pode rodar duas vezes.** Ver
-  [Release da CMED falhou](#release-da-cmed-falhou). Fase 3.
 - **Situação e medidas são tão velhas quanto o anvisa-api.** Nada aqui confere a idade delas. Desde
   13/10/2026 a ANVISA não atualiza os arquivos de registro, e o alarme disso fica no anvisa-api.
 - **Coleta incompleta de até 10% passa sem vermelho.** Só aparece no rodapé ("N subfilas falharam") e no
