@@ -78,6 +78,12 @@ def walk_catalog(client: Client, wanted: set[int] | None = None) -> dict:
     return catalog
 
 
+# The API answers an empty-bodied 404 both for an empty subfila and, in an outage, possibly for
+# all of them; the client returns [] for both. In the 57 days to 2026-11-03 at most 14 subfilas
+# emptied on one day (median 3), while a 404 for everything would empty about 230.
+ESVAZIADAS_MAX = 30
+
+
 def fetch_queue(
     client: Client,
     sub: int,
@@ -110,9 +116,14 @@ def crawl(
     refresh_catalog: bool | None = None,
     log: Callable[[str], None] = print,
     sleep: Callable[[float], None] = time.sleep,
+    esvaziadas_max: int = ESVAZIADAS_MAX,
 ) -> dict:
     """Crawl and write the day's files. Returns the meta dict. A failed subfila is recorded in
     meta and skipped; the snapshot still holds every subfila that answered.
+
+    More than `esvaziadas_max` subfilas empty today that had rows on the last snapshot are taken
+    for an outage, not for queues that emptied: they are recorded as failed, so the feeds show no
+    exits for them and the incomplete-crawl alarm counts them.
 
     The catalog is re-walked when `refresh_catalog` is true, or by default on Mondays and
     whenever catalog.json is missing; other days reuse it, which saves the ~70 catalog
@@ -154,6 +165,25 @@ def crawl(
             }
         )
         log(f"subfila {sub} ({info['descricao']}): {len(rows)} rows")
+
+    anteriores = [d for d in snapshot_days(out) if d < day]
+    if anteriores:
+        ontem = load_snapshot(out, anteriores[-1])
+        esvaziadas = [q for q in queues if not q["rows"] and ontem.get(q["subfila"])]
+        if len(esvaziadas) > esvaziadas_max:
+            log(
+                f"{len(esvaziadas)} subfilas with rows on {anteriores[-1]} came back empty, more "
+                f"than {esvaziadas_max}: recorded as failed"
+            )
+            for q in esvaziadas:
+                queues.remove(q)
+                failed.append(
+                    {
+                        "subfila": q["subfila"],
+                        "error": f"empty (404) after {len(ontem[q['subfila']])} rows on "
+                        f"{anteriores[-1]}, with {len(esvaziadas)} subfilas emptied at once",
+                    }
+                )
 
     finished = now()
     meta = {

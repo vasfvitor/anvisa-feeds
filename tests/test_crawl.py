@@ -105,3 +105,41 @@ def test_weekdays_reuse_the_catalog_and_mondays_walk_it(client, fake_api, tmp_pa
         client, tmp_path, day=date(2026, 9, 9), areas=[8], refresh_catalog=True, log=lambda s: None
     )
     assert forced["catalog_refreshed"] is True
+
+
+def test_too_many_queues_emptied_at_once_are_failures_not_exits(client, fake_api, tmp_path):
+    """An outage that answers 404 for every subfila must not read as every queue emptying."""
+    import httpx
+
+    crawl(client, tmp_path, day=date(2026, 9, 6), areas=[8], log=lambda s: None)
+    original = fake_api.handler
+
+    def tudo_404(request):
+        if request.url.path.endswith("/fila/consulta"):
+            return httpx.Response(404)
+        return original(request)
+
+    client._http._transport = httpx.MockTransport(tudo_404)
+    logs: list[str] = []
+    meta = crawl(
+        client, tmp_path, day=date(2026, 9, 8), areas=[8], log=logs.append, esvaziadas_max=1
+    )
+    assert meta["subfilas_crawled"] == 15 and meta["subfilas_total"] == 17
+    assert meta["requests"] == 17 and meta["rows"] == 0
+    assert sorted(meta["failed"], key=lambda f: -f["subfila"]) == [
+        {
+            "subfila": 167,
+            "error": "empty (404) after 40 rows on 2026-09-06, with 2 subfilas emptied at once",
+        },
+        {
+            "subfila": 161,
+            "error": "empty (404) after 35 rows on 2026-09-06, with 2 subfilas emptied at once",
+        },
+    ]
+    hoje = load_snapshot(tmp_path, date(2026, 9, 8))
+    assert 167 not in hoje and 161 not in hoje and hoje[172] == []
+    assert any("recorded as failed" in line for line in logs)
+
+    # under the limit, the same answers are queues that emptied
+    normal = crawl(client, tmp_path, day=date(2026, 9, 9), areas=[8], log=lambda s: None)
+    assert normal["failed"] == [] and normal["subfilas_crawled"] == 17

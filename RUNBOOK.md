@@ -58,6 +58,13 @@ só remonta o site, sem fazer nenhuma requisição à ANVISA.
   `subfila <id>: <Erro>: <mensagem>`. Por exemplo,
   `RateLimitError: HTTP 429: rate limit exceeded (25 burst, 1 request/s)`, ou `ReadTimeout` depois de
   `retry 2/2`.
+- **Ou, com muitas filas vazias de uma vez:**
+  `empty (404) after <N> rows on <dia anterior>, with <K> subfilas emptied at once`, e no log do passo
+  Crawl `<K> subfilas with rows on <dia anterior> came back empty, more than 30: recorded as failed`. A
+  ANVISA responde 404 tanto para uma fila vazia quanto, numa pane, para todas. Até 03/11/2026, no máximo
+  14 filas esvaziaram num mesmo dia; quando mais de 30 esvaziam juntas, elas contam como não coletadas, e
+  os feeds e o ritmo não mostram saídas que não aconteceram. O limite é `ESVAZIADAS_MAX`, em
+  `src/anvisa_feeds/crawl.py`.
 - **O que quer dizer:** mais de 10% das subfilas não responderam. O snapshot parcial já foi commitado e
   publicado.
 - **O site foi afetado?** Saiu parcial. As subfilas que falharam mostram a última fila coletada, com
@@ -239,9 +246,6 @@ commitados. Não publica nada. O deploy vem do workflow crawl.
 
 Achados em 2026-11-03, ainda sem correção.
 
-- **404 em tudo vira filas "esvaziadas".** A ANVISA responde 404 para uma subfila vazia. Se ela passar a
-  responder 404 para todas, cada fila sai como esvaziada, com o run verde e muitos eventos de saída nos
-  feeds e no ritmo. Fase 3.
 - **Subfila removida parece vazia.** O catálogo só é relido às segundas. Até lá, uma subfila que a
   ANVISA tirou aparece como vazia.
 - **Sem alarme de idade da fila.** Se o cron parar, nada fica vermelho. Só a linha "Última coleta
