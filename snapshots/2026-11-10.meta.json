@@ -1,0 +1,509 @@
+{
+  "date": "2026-11-10",
+  "started": "2026-11-10T13:46:06.942498-03:00",
+  "finished": "2026-11-10T13:49:12.278156-03:00",
+  "seconds": 185,
+  "catalog_refreshed": false,
+  "requests": 318,
+  "rows": 7240,
+  "subfilas_total": 318,
+  "subfilas_crawled": 194,
+  "failed": [
+    {
+      "subfila": 1245,
+      "error": "RateLimitError: HTTP 429: rate limit exceeded (25 burst, 1 request/s)"
+    },
+    {
+      "subfila": 198,
+      "error": "RateLimitError: HTTP 429: rate limit exceeded (25 burst, 1 request/s)"
+    },
+    {
+      "subfila": 1981,
+      "error": "RateLimitError: HTTP 429: rate limit exceeded (25 burst, 1 request/s)"
+    },
+    {
+      "subfila": 2161,
+      "error": "RateLimitError: HTTP 429: rate limit exceeded (25 burst, 1 request/s)"
+    },
+    {
+      "subfila": 2164,
+      "error": "RateLimitError: HTTP 429: rate limit exceeded (25 burst, 1 request/s)"
+    },
+    {
+      "subfila": 2165,
+      "error": "RateLimitError: HTTP 429: rate limit exceeded (25 burst, 1 request/s)"
+    },
+    {
+      "subfila": 2167,
+      "error": "RateLimitError: HTTP 429: rate limit exceeded (25 burst, 1 request/s)"
+    },
+    {
+      "subfila": 222,
+      "error": "RateLimitError: HTTP 429: rate limit exceeded (25 burst, 1 request/s)"
+    },
+    {
+      "subfila": 2443,
+      "error": "ApiError: HTTP 500: {'timestamp': '2026-11-10T16:48:18Z', 'path': '/consultas-externas-api/api/v1/fila/consulta', 'status': 500, 'error': 'Internal Server Error', 'requestId': '2a20d77e-45017'}"
+    },
+    {
+      "subfila": 341,
+      "error": "RateLimitError: HTTP 429: rate limit exceeded (25 burst, 1 request/s)"
+    },
+    {
+      "subfila": 344,
+      "error": "RateLimitError: HTTP 429: rate limit exceeded (25 burst, 1 request/s)"
+    },
+    {
+      "subfila": 3443,
+      "error": "RateLimitError: HTTP 429: rate limit exceeded (25 burst, 1 request/s)"
+    },
+    {
+      "subfila": 345,
+      "error": "RateLimitError: HTTP 429: rate limit exceeded (25 burst, 1 request/s)"
+    },
+    {
+      "subfila": 346,
+      "error": "RateLimitError: HTTP 429: rate limit exceeded (25 burst, 1 request/s)"
+    },
+    {
+      "subfila": 3463,
+      "error": "RateLimitError: HTTP 429: rate limit exceeded (25 burst, 1 request/s)"
+    },
+    {
+      "subfila": 3483,
+      "error": "RateLimitError: HTTP 429: rate limit exceeded (25 burst, 1 request/s)"
+    },
+    {
+      "subfila": 350,
+      "error": "RateLimitError: HTTP 429: rate limit exceeded (25 burst, 1 request/s)"
+    },
+    {
+      "subfila": 3503,
+      "error": "RateLimitError: HTTP 429: rate limit exceeded (25 burst, 1 request/s)"
+    },
+    {
+      "subfila": 3523,
+      "error": "RateLimitError: HTTP 429: rate limit exceeded (25 burst, 1 request/s)"
+    },
+    {
+      "subfila": 3524,
+      "error": "RateLimitError: HTTP 429: rate limit exceeded (25 burst, 1 request/s)"
+    },
+    {
+      "subfila": 3563,
+      "error": "RateLimitError: HTTP 429: rate limit exceeded (25 burst, 1 request/s)"
+    },
+    {
+      "subfila": 3564,
+      "error": "RateLimitError: HTTP 429: rate limit exceeded (25 burst, 1 request/s)"
+    },
+    {
+      "subfila": 3565,
+      "error": "RateLimitError: HTTP 429: rate limit exceeded (25 burst, 1 request/s)"
+    },
+    {
+      "subfila": 3567,
+      "error": "RateLimitError: HTTP 429: rate limit exceeded (25 burst, 1 request/s)"
+    },
+    {
+      "subfila": 3584,
+      "error": "RateLimitError: HTTP 429: rate limit exceeded (25 burst, 1 request/s)"
+    },
+    {
+      "subfila": 3603,
+      "error": "RateLimitError: HTTP 429: rate limit exceeded (25 burst, 1 request/s)"
+    },
+    {
+      "subfila": 3707,
+      "error": "RateLimitError: HTTP 429: rate limit exceeded (25 burst, 1 request/s)"
+    },
+    {
+      "subfila": 3807,
+      "error": "RateLimitError: HTTP 429: rate limit exceeded (25 burst, 1 request/s)"
+    },
+    {
+      "subfila": 3808,
+      "error": "RateLimitError: HTTP 429: rate limit exceeded (25 burst, 1 request/s)"
+    },
+    {
+      "subfila": 3827,
+      "error": "RateLimitError: HTTP 429: rate limit exceeded (25 burst, 1 request/s)"
+    },
+    {
+      "subfila": 3829,
+      "error": "RateLimitError: HTTP 429: rate limit exceeded (25 burst, 1 request/s)"
+    },
+    {
+      "subfila": 390,
+      "error": "RateLimitError: HTTP 429: rate limit exceeded (25 burst, 1 request/s)"
+    },
+    {
+      "subfila": 392,
+      "error": "RateLimitError: HTTP 429: rate limit exceeded (25 burst, 1 request/s)"
+    },
+    {
+      "subfila": 4,
+      "error": "RateLimitError: HTTP 429: rate limit exceeded (25 burst, 1 request/s)"
+    },
+    {
+      "subfila": 4007,
+      "error": "RateLimitError: HTTP 429: rate limit exceeded (25 burst, 1 request/s)"
+    },
+    {
+      "subfila": 4008,
+      "error": "RateLimitError: HTTP 429: rate limit exceeded (25 burst, 1 request/s)"
+    },
+    {
+      "subfila": 4047,
+      "error": "RateLimitError: HTTP 429: rate limit exceeded (25 burst, 1 request/s)"
+    },
+    {
+      "subfila": 4067,
+      "error": "RateLimitError: HTTP 429: rate limit exceeded (25 burst, 1 request/s)"
+    },
+    {
+      "subfila": 4087,
+      "error": "RateLimitError: HTTP 429: rate limit exceeded (25 burst, 1 request/s)"
+    },
+    {
+      "subfila": 4089,
+      "error": "RateLimitError: HTTP 429: rate limit exceeded (25 burst, 1 request/s)"
+    },
+    {
+      "subfila": 4090,
+      "error": "RateLimitError: HTTP 429: rate limit exceeded (25 burst, 1 request/s)"
+    },
+    {
+      "subfila": 4091,
+      "error": "RateLimitError: HTTP 429: rate limit exceeded (25 burst, 1 request/s)"
+    },
+    {
+      "subfila": 4147,
+      "error": "RateLimitError: HTTP 429: rate limit exceeded (25 burst, 1 request/s)"
+    },
+    {
+      "subfila": 4187,
+      "error": "RateLimitError: HTTP 429: rate limit exceeded (25 burst, 1 request/s)"
+    },
+    {
+      "subfila": 4247,
+      "error": "RateLimitError: HTTP 429: rate limit exceeded (25 burst, 1 request/s)"
+    },
+    {
+      "subfila": 4349,
+      "error": "RateLimitError: HTTP 429: rate limit exceeded (25 burst, 1 request/s)"
+    },
+    {
+      "subfila": 4367,
+      "error": "RateLimitError: HTTP 429: rate limit exceeded (25 burst, 1 request/s)"
+    },
+    {
+      "subfila": 4387,
+      "error": "RateLimitError: HTTP 429: rate limit exceeded (25 burst, 1 request/s)"
+    },
+    {
+      "subfila": 4389,
+      "error": "RateLimitError: HTTP 429: rate limit exceeded (25 burst, 1 request/s)"
+    },
+    {
+      "subfila": 4390,
+      "error": "RateLimitError: HTTP 429: rate limit exceeded (25 burst, 1 request/s)"
+    },
+    {
+      "subfila": 5,
+      "error": "RateLimitError: HTTP 429: rate limit exceeded (25 burst, 1 request/s)"
+    },
+    {
+      "subfila": 502,
+      "error": "RateLimitError: HTTP 429: rate limit exceeded (25 burst, 1 request/s)"
+    },
+    {
+      "subfila": 503,
+      "error": "RateLimitError: HTTP 429: rate limit exceeded (25 burst, 1 request/s)"
+    },
+    {
+      "subfila": 505,
+      "error": "RateLimitError: HTTP 429: rate limit exceeded (25 burst, 1 request/s)"
+    },
+    {
+      "subfila": 506,
+      "error": "RateLimitError: HTTP 429: rate limit exceeded (25 burst, 1 request/s)"
+    },
+    {
+      "subfila": 507,
+      "error": "RateLimitError: HTTP 429: rate limit exceeded (25 burst, 1 request/s)"
+    },
+    {
+      "subfila": 522,
+      "error": "RateLimitError: HTTP 429: rate limit exceeded (25 burst, 1 request/s)"
+    },
+    {
+      "subfila": 524,
+      "error": "RateLimitError: HTTP 429: rate limit exceeded (25 burst, 1 request/s)"
+    },
+    {
+      "subfila": 541,
+      "error": "RateLimitError: HTTP 429: rate limit exceeded (25 burst, 1 request/s)"
+    },
+    {
+      "subfila": 543,
+      "error": "RateLimitError: HTTP 429: rate limit exceeded (25 burst, 1 request/s)"
+    },
+    {
+      "subfila": 548,
+      "error": "RateLimitError: HTTP 429: rate limit exceeded (25 burst, 1 request/s)"
+    },
+    {
+      "subfila": 581,
+      "error": "RateLimitError: HTTP 429: rate limit exceeded (25 burst, 1 request/s)"
+    },
+    {
+      "subfila": 586,
+      "error": "RateLimitError: HTTP 429: rate limit exceeded (25 burst, 1 request/s)"
+    },
+    {
+      "subfila": 587,
+      "error": "RateLimitError: HTTP 429: rate limit exceeded (25 burst, 1 request/s)"
+    },
+    {
+      "subfila": 588,
+      "error": "RateLimitError: HTTP 429: rate limit exceeded (25 burst, 1 request/s)"
+    },
+    {
+      "subfila": 592,
+      "error": "RateLimitError: HTTP 429: rate limit exceeded (25 burst, 1 request/s)"
+    },
+    {
+      "subfila": 599,
+      "error": "RateLimitError: HTTP 429: rate limit exceeded (25 burst, 1 request/s)"
+    },
+    {
+      "subfila": 6,
+      "error": "RateLimitError: HTTP 429: rate limit exceeded (25 burst, 1 request/s)"
+    },
+    {
+      "subfila": 622,
+      "error": "RateLimitError: HTTP 429: rate limit exceeded (25 burst, 1 request/s)"
+    },
+    {
+      "subfila": 624,
+      "error": "RateLimitError: HTTP 429: rate limit exceeded (25 burst, 1 request/s)"
+    },
+    {
+      "subfila": 627,
+      "error": "RateLimitError: HTTP 429: rate limit exceeded (25 burst, 1 request/s)"
+    },
+    {
+      "subfila": 63,
+      "error": "RateLimitError: HTTP 429: rate limit exceeded (25 burst, 1 request/s)"
+    },
+    {
+      "subfila": 630,
+      "error": "RateLimitError: HTTP 429: rate limit exceeded (25 burst, 1 request/s)"
+    },
+    {
+      "subfila": 631,
+      "error": "RateLimitError: HTTP 429: rate limit exceeded (25 burst, 1 request/s)"
+    },
+    {
+      "subfila": 635,
+      "error": "RateLimitError: HTTP 429: rate limit exceeded (25 burst, 1 request/s)"
+    },
+    {
+      "subfila": 638,
+      "error": "RateLimitError: HTTP 429: rate limit exceeded (25 burst, 1 request/s)"
+    },
+    {
+      "subfila": 64,
+      "error": "RateLimitError: HTTP 429: rate limit exceeded (25 burst, 1 request/s)"
+    },
+    {
+      "subfila": 641,
+      "error": "RateLimitError: HTTP 429: rate limit exceeded (25 burst, 1 request/s)"
+    },
+    {
+      "subfila": 644,
+      "error": "RateLimitError: HTTP 429: rate limit exceeded (25 burst, 1 request/s)"
+    },
+    {
+      "subfila": 647,
+      "error": "RateLimitError: HTTP 429: rate limit exceeded (25 burst, 1 request/s)"
+    },
+    {
+      "subfila": 650,
+      "error": "RateLimitError: HTTP 429: rate limit exceeded (25 burst, 1 request/s)"
+    },
+    {
+      "subfila": 653,
+      "error": "RateLimitError: HTTP 429: rate limit exceeded (25 burst, 1 request/s)"
+    },
+    {
+      "subfila": 656,
+      "error": "RateLimitError: HTTP 429: rate limit exceeded (25 burst, 1 request/s)"
+    },
+    {
+      "subfila": 66,
+      "error": "RateLimitError: HTTP 429: rate limit exceeded (25 burst, 1 request/s)"
+    },
+    {
+      "subfila": 7,
+      "error": "RateLimitError: HTTP 429: rate limit exceeded (25 burst, 1 request/s)"
+    },
+    {
+      "subfila": 725,
+      "error": "RateLimitError: HTTP 429: rate limit exceeded (25 burst, 1 request/s)"
+    },
+    {
+      "subfila": 761,
+      "error": "RateLimitError: HTTP 429: rate limit exceeded (25 burst, 1 request/s)"
+    },
+    {
+      "subfila": 768,
+      "error": "RateLimitError: HTTP 429: rate limit exceeded (25 burst, 1 request/s)"
+    },
+    {
+      "subfila": 782,
+      "error": "RateLimitError: HTTP 429: rate limit exceeded (25 burst, 1 request/s)"
+    },
+    {
+      "subfila": 783,
+      "error": "RateLimitError: HTTP 429: rate limit exceeded (25 burst, 1 request/s)"
+    },
+    {
+      "subfila": 789,
+      "error": "RateLimitError: HTTP 429: rate limit exceeded (25 burst, 1 request/s)"
+    },
+    {
+      "subfila": 790,
+      "error": "RateLimitError: HTTP 429: rate limit exceeded (25 burst, 1 request/s)"
+    },
+    {
+      "subfila": 791,
+      "error": "RateLimitError: HTTP 429: rate limit exceeded (25 burst, 1 request/s)"
+    },
+    {
+      "subfila": 793,
+      "error": "RateLimitError: HTTP 429: rate limit exceeded (25 burst, 1 request/s)"
+    },
+    {
+      "subfila": 794,
+      "error": "RateLimitError: HTTP 429: rate limit exceeded (25 burst, 1 request/s)"
+    },
+    {
+      "subfila": 795,
+      "error": "RateLimitError: HTTP 429: rate limit exceeded (25 burst, 1 request/s)"
+    },
+    {
+      "subfila": 801,
+      "error": "RateLimitError: HTTP 429: rate limit exceeded (25 burst, 1 request/s)"
+    },
+    {
+      "subfila": 804,
+      "error": "RateLimitError: HTTP 429: rate limit exceeded (25 burst, 1 request/s)"
+    },
+    {
+      "subfila": 82,
+      "error": "RateLimitError: HTTP 429: rate limit exceeded (25 burst, 1 request/s)"
+    },
+    {
+      "subfila": 822,
+      "error": "RateLimitError: HTTP 429: rate limit exceeded (25 burst, 1 request/s)"
+    },
+    {
+      "subfila": 823,
+      "error": "RateLimitError: HTTP 429: rate limit exceeded (25 burst, 1 request/s)"
+    },
+    {
+      "subfila": 824,
+      "error": "RateLimitError: HTTP 429: rate limit exceeded (25 burst, 1 request/s)"
+    },
+    {
+      "subfila": 825,
+      "error": "RateLimitError: HTTP 429: rate limit exceeded (25 burst, 1 request/s)"
+    },
+    {
+      "subfila": 86,
+      "error": "RateLimitError: HTTP 429: rate limit exceeded (25 burst, 1 request/s)"
+    },
+    {
+      "subfila": 862,
+      "error": "RateLimitError: HTTP 429: rate limit exceeded (25 burst, 1 request/s)"
+    },
+    {
+      "subfila": 881,
+      "error": "RateLimitError: HTTP 429: rate limit exceeded (25 burst, 1 request/s)"
+    },
+    {
+      "subfila": 901,
+      "error": "RateLimitError: HTTP 429: rate limit exceeded (25 burst, 1 request/s)"
+    },
+    {
+      "subfila": 903,
+      "error": "RateLimitError: HTTP 429: rate limit exceeded (25 burst, 1 request/s)"
+    },
+    {
+      "subfila": 905,
+      "error": "RateLimitError: HTTP 429: rate limit exceeded (25 burst, 1 request/s)"
+    },
+    {
+      "subfila": 906,
+      "error": "RateLimitError: HTTP 429: rate limit exceeded (25 burst, 1 request/s)"
+    },
+    {
+      "subfila": 908,
+      "error": "RateLimitError: HTTP 429: rate limit exceeded (25 burst, 1 request/s)"
+    },
+    {
+      "subfila": 910,
+      "error": "RateLimitError: HTTP 429: rate limit exceeded (25 burst, 1 request/s)"
+    },
+    {
+      "subfila": 913,
+      "error": "RateLimitError: HTTP 429: rate limit exceeded (25 burst, 1 request/s)"
+    },
+    {
+      "subfila": 914,
+      "error": "RateLimitError: HTTP 429: rate limit exceeded (25 burst, 1 request/s)"
+    },
+    {
+      "subfila": 915,
+      "error": "RateLimitError: HTTP 429: rate limit exceeded (25 burst, 1 request/s)"
+    },
+    {
+      "subfila": 917,
+      "error": "RateLimitError: HTTP 429: rate limit exceeded (25 burst, 1 request/s)"
+    },
+    {
+      "subfila": 918,
+      "error": "RateLimitError: HTTP 429: rate limit exceeded (25 burst, 1 request/s)"
+    },
+    {
+      "subfila": 919,
+      "error": "RateLimitError: HTTP 429: rate limit exceeded (25 burst, 1 request/s)"
+    },
+    {
+      "subfila": 921,
+      "error": "RateLimitError: HTTP 429: rate limit exceeded (25 burst, 1 request/s)"
+    },
+    {
+      "subfila": 922,
+      "error": "RateLimitError: HTTP 429: rate limit exceeded (25 burst, 1 request/s)"
+    },
+    {
+      "subfila": 923,
+      "error": "RateLimitError: HTTP 429: rate limit exceeded (25 burst, 1 request/s)"
+    },
+    {
+      "subfila": 924,
+      "error": "RateLimitError: HTTP 429: rate limit exceeded (25 burst, 1 request/s)"
+    },
+    {
+      "subfila": 961,
+      "error": "RateLimitError: HTTP 429: rate limit exceeded (25 burst, 1 request/s)"
+    },
+    {
+      "subfila": 962,
+      "error": "RateLimitError: HTTP 429: rate limit exceeded (25 burst, 1 request/s)"
+    }
+  ]
+}
