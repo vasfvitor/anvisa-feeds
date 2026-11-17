@@ -86,6 +86,35 @@ def test_transport_errors_are_retried_then_recorded_not_fatal(client, fake_api, 
     assert any("retry 1/2" in line for line in logs)
 
 
+def test_a_429_is_retried_after_a_long_wait(client, fake_api, tmp_path):
+    """Something else sharing the address can drain the bucket: wait it out, do not give up."""
+    import httpx
+
+    limited: dict[int, int] = {167: 1, 161: 3}  # 167 recovers on retry; 161 stays limited
+    original = fake_api.handler
+
+    def handler(request):
+        if request.url.path.endswith("/fila/consulta"):
+            sub = json.loads(request.read())["filter"]["subfila"]
+            if limited.get(sub, 0) > 0:
+                limited[sub] -= 1
+                return httpx.Response(429)
+        return original(request)
+
+    client._http._transport = httpx.MockTransport(handler)
+    slept: list[float] = []
+    logs: list[str] = []
+    meta = crawl(
+        client, tmp_path, day=date(2026, 9, 6), areas=[8], log=logs.append, sleep=slept.append
+    )
+
+    assert meta["rows"] == 40  # 167 came back after one retry
+    assert [f["subfila"] for f in meta["failed"]] == [161]
+    assert meta["failed"][0]["error"].startswith("RateLimitError: HTTP 429")
+    assert slept == [30.0, 30.0, 60.0]  # one retry for 167, two for 161
+    assert any("RateLimitError" in line and "retry 1/2" in line for line in logs)
+
+
 def test_weekdays_reuse_the_catalog_and_mondays_walk_it(client, fake_api, tmp_path):
     crawl(client, tmp_path, day=date(2026, 9, 6), areas=[8], log=lambda s: None)
     fake_api.requests.clear()

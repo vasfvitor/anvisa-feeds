@@ -24,9 +24,10 @@ from pathlib import Path
 from zoneinfo import ZoneInfo
 
 import httpx
-from anvisa import AnvisaError, Client
+from anvisa import AnvisaError, Client, RateLimitError
 
 BRT = ZoneInfo("America/Sao_Paulo")
+RATE_LIMIT_WAIT = 30.0  # seconds before retrying a 429: more than the bucket needs to refill
 
 
 def now() -> datetime:
@@ -93,17 +94,20 @@ def fetch_queue(
     sleep: Callable[[float], None] = time.sleep,
 ) -> list:
     """One subfila's queue, retrying transport errors (timeouts, resets, a connection dropped
-    mid-body) with a short backoff. The anvisa client only wraps HTTP status errors into
-    AnvisaError; transport errors surface as httpx exceptions and would otherwise abort the
-    whole crawl."""
+    mid-body) with a short backoff, and HTTP 429 with a long one. The anvisa client only wraps
+    HTTP status errors into AnvisaError; transport errors surface as httpx exceptions and would
+    otherwise abort the whole crawl. The client's throttle keeps the crawl at the gateway's pace,
+    so a 429 means something else spent the shared per-address bucket: wait for it to refill
+    (`RATE_LIMIT_WAIT` seconds, then twice that) instead of recording the subfila as failed."""
     for attempt in range(1, attempts + 1):
         try:
             return client.fila.query(sub)  # [] when nothing is queued
-        except httpx.TransportError as exc:
+        except (httpx.TransportError, RateLimitError) as exc:
             if attempt == attempts:
                 raise
             log(f"subfila {sub}: {type(exc).__name__}: {exc}; retry {attempt}/{attempts - 1}")
-            sleep(5.0 * attempt)
+            wait = RATE_LIMIT_WAIT if isinstance(exc, RateLimitError) else 5.0
+            sleep(wait * attempt)
     raise AssertionError("unreachable")
 
 

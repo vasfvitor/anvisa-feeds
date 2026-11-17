@@ -56,8 +56,10 @@ só remonta o site, sem fazer nenhuma requisição à ANVISA.
   (passo "Alarm issue for an incomplete crawl"). O run fica verde.
 - **Mensagem:** a issue lista as subfilas, com o erro de cada uma, como no passo Crawl:
   `subfila <id>: <Erro>: <mensagem>`. Por exemplo,
-  `RateLimitError: HTTP 429: rate limit exceeded (25 burst, 1 request/s)`, ou `ReadTimeout` depois de
-  `retry 2/2`.
+  `RateLimitError: HTTP 429: rate limit exceeded (25 burst, 1 request/s)`, ou `ReadTimeout`, sempre
+  depois de `retry 2/2`: o 429 espera 30 s e depois 60 s antes de desistir (desde 16/11/2026), o erro de
+  rede espera 5 s e 10 s. Um 429 que sobra assim quer dizer que outra coisa gasta a cota do mesmo
+  endereço, ou que o throttle do `anvisa` parou de acompanhar o gateway (foi o caso de 10 a 16/11/2026).
 - **Ou, com muitas filas vazias de uma vez:**
   `empty (404) after <N> rows on <dia anterior>, with <K> subfilas emptied at once`, e no log do passo
   Crawl `<K> subfilas with rows on <dia anterior> came back empty, more than 30: recorded as failed`. A
