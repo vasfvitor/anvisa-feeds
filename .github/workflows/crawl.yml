@@ -194,6 +194,7 @@ jobs:
       situacao_build: ${{ steps.estado.outputs.situacao_build }}
       dcb_build: ${{ steps.estado.outputs.dcb_build }}
       cmed_dias: ${{ steps.estado.outputs.cmed_dias }}
+      cmed_lista: ${{ steps.estado.outputs.cmed_lista }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1   # v7.0.1
         with:
@@ -208,16 +209,22 @@ jobs:
           CRAWL: ${{ needs.crawl.result }}
           COLETA: ${{ needs.crawl.outputs.coleta }}
           FALTARAM: ${{ needs.crawl.outputs.faltaram }}
+          DAY: ${{ needs.crawl.outputs.day }}
         # the notice follows the crawl job's Count step (an incomplete crawl no longer turns that job
         # red, it opens an issue). No verdict from it and a failed crawl job means the crawl failed
-        # before that step: nothing was collected, or the snapshot never reached main.
+        # before that step: nothing was collected, or the snapshot never reached main. The notice
+        # names the crawl's day and, after a failure, the day of the last snapshot the pages show.
         run: |
+          dia=$(TZ=America/Sao_Paulo date -d "${DAY:-now}" +%d/%m/%Y)
           extra=()
           if [ "$COLETA" = ativo ]; then
             # a partial crawl was committed: its failed subfilas show their last collected queue
-            extra=(--notice "A coleta de hoje ficou incompleta: $FALTARAM subfilas não responderam e mostram a última fila coletada.")
+            extra=(--notice "A coleta de $dia ficou incompleta: $FALTARAM subfilas não responderam e mostram a última fila coletada, com o dia dela.")
           elif [ "$CRAWL" = failure ] && [ -z "$COLETA" ]; then
-            extra=(--notice "A coleta de hoje falhou; estes dados são da última coleta bem-sucedida.")
+            # the newest fila snapshot on main (snapshots/cmed/ is a subfolder, not matched)
+            ultima=$(ls snapshots/*.meta.json | tail -n 1 | xargs basename -s .meta.json)
+            ultima=$(date -d "$ultima" +%d/%m/%Y)
+            extra=(--notice "A coleta de $dia falhou; as páginas mostram a última coleta bem-sucedida, de $ultima.")
           fi
           uv run anvisa-feeds build --snapshots snapshots --site site "${extra[@]}"
       # what the alarms after the deploy check; read here, where the site is, without failing,
@@ -227,7 +234,8 @@ jobs:
         run: |
           jq -r '"situacao_build=\(.cmed.situacao_build // "")",
                  "dcb_build=\(.cmed.dcb_build // "")",
-                 "cmed_dias=\(if .cmed.stamp then (now - (.cmed.stamp | strptime("%Y%m%d") | mktime)) / 86400 | floor else "" end)"' \
+                 "cmed_dias=\(if .cmed.stamp then (now - (.cmed.stamp | strptime("%Y%m%d") | mktime)) / 86400 | floor else "" end)",
+                 "cmed_lista=\(.cmed.stamp // "" | if . == "" then "" else "\(.[6:8])/\(.[4:6])/\(.[0:4])" end)"' \
             site/meta.json >> "$GITHUB_OUTPUT"
       - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9   # v5.0.0
         with:
@@ -261,6 +269,7 @@ jobs:
           SITUACAO: ${{ needs.build.outputs.situacao_build }}
           DCB: ${{ needs.build.outputs.dcb_build }}
           CMED_DIAS: ${{ needs.build.outputs.cmed_dias }}
+          CMED_LISTA: ${{ needs.build.outputs.cmed_lista }}
         run: |
           echo "registration build: ${SITUACAO:-none}; official names build: ${DCB:-none}; CMED list: ${CMED_DIAS:-?} days old"
           faltou=""
@@ -273,7 +282,7 @@ jobs:
               if [ "$CMED_DIAS" -gt 45 ]; then echo "cmed_estado=ativo"; else echo "cmed_estado=normal"; fi
             fi
             echo "cmed_titulo=Lista da CMED com $CMED_DIAS dias"
-            echo "cmed_corpo=A lista de preços da CMED publicada tem $CMED_DIAS dias. A CMED publica uma por mês; as páginas seguem com a lista atual."
+            echo "cmed_corpo=A lista de preços da CMED no arquivo da ANVISA de $CMED_LISTA tem $CMED_DIAS dias. A CMED publica uma por mês; as páginas seguem com a lista desse arquivo."
           } >> "$GITHUB_OUTPUT"
           [ -n "$SITUACAO" ] || echo "cmed/dados went out without the registration status and measures (anvisa-api could not be read)"
           [ -n "$DCB" ] || echo "cmed/dados went out without the official names (anvisa-api could not be read)"

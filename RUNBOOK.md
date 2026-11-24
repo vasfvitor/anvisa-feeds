@@ -70,7 +70,8 @@ só remonta o site, sem fazer nenhuma requisição à ANVISA.
 - **O que quer dizer:** mais de 10% das subfilas não responderam. O snapshot parcial já foi commitado e
   publicado.
 - **O site foi afetado?** Saiu parcial. As subfilas que falharam mostram a última fila coletada, com
-  "não coletada em <dia>", e todas as páginas têm o aviso "A coleta de hoje ficou incompleta".
+  "não coletada em <dia>", e todas as páginas têm o aviso "A coleta de <dia> ficou incompleta: <N>
+  subfilas não responderam e mostram a última fila coletada, com o dia dela."
 - **Agir ou esperar:** esperar. A API da ANVISA estava instável ou o limite de requisições foi atingido.
   A issue fecha sozinha na primeira coleta com 10% de falhas ou menos.
 - **Pedir ajuda quando:** a issue ficar aberta vários dias seguidos.
@@ -86,7 +87,8 @@ só remonta o site, sem fazer nenhuma requisição à ANVISA.
 - **O que quer dizer:** a coleta inteira falhou. Pode ser o portal de APIs fora do ar, o token negado ou
   um bloqueio do Cloudflare.
 - **O site foi afetado?** Nada foi commitado. O site é montado com o último snapshot bom e o aviso "A
-  coleta de hoje falhou; estes dados são da última coleta bem-sucedida."
+  coleta de <dia> falhou; as páginas mostram a última coleta bem-sucedida, de <dia do último
+  snapshot>."
 - **Agir ou esperar:** esperar um dia.
 - **O que fazer se repetir:**
   - **`token request failed`:** entrar em https://api.anvisa.gov.br/ com a conta gov.br e conferir se
@@ -208,7 +210,9 @@ a causa ser resolvida.
 
 ### Lista da CMED velha
 
-- **Onde aparece:** a issue "Lista da CMED com N dias", aberta pelo job deploy. O run fica verde.
+- **Onde aparece:** a issue "Lista da CMED com N dias", aberta pelo job deploy, com o texto "A lista de
+  preços da CMED no arquivo da ANVISA de <data> tem <N> dias. A CMED publica uma por mês; as páginas
+  seguem com a lista desse arquivo." O run fica verde.
 - **O que quer dizer:** a lista da CMED publicada tem mais de 45 dias. A CMED publica uma por mês. A lista
   atual é de 09/10/2026, então a issue pode abrir por volta de 24/11/2026.
 - **O site foi afetado?** As páginas mostram a lista antiga. Os preços continuam valendo até a CMED
@@ -258,4 +262,4 @@ Achados em 2026-11-03, ainda sem correção.
 - **Situação e medidas são tão velhas quanto o anvisa-api.** Nada aqui confere a idade delas. Desde
   13/10/2026 a ANVISA não atualiza os arquivos de registro, e o alarme disso fica no anvisa-api.
 - **Coleta incompleta de até 10% passa sem vermelho.** Só aparece no rodapé ("N subfilas falharam") e no
-  índice ("não coletada hoje").
+  índice ("não coletada em <dia>").
