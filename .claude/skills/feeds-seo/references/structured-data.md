@@ -20,7 +20,6 @@ results. `WebSite` or `Organization` would add nothing a crawler cannot already 
   "description": "<same sentence as the index meta description>",
   "url": "<base_url>/",
   "sameAs": "https://github.com/vasfvitor/anvisa-feeds",
-  "license": "https://opensource.org/licenses/MIT",
   "isBasedOn": "https://consultas.anvisa.gov.br",
   "creator": {"@type": "Organization", "name": "anvisa-feeds"},
   "inLanguage": "pt-BR",
@@ -43,7 +42,8 @@ results. `WebSite` or `Organization` would add nothing a crawler cannot already 
 - `dateModified` comes from `meta["finished"]`, never build time.
 - `temporalCoverage` is an ISO interval with an open end (`YYYY-MM-DD/..`); the start is the
   oldest day in the build window, which is what the feeds actually contain.
-- `license` describes the site and feeds. The underlying data is ANVISA's; `isBasedOn` says so.
+- No `license`: the code's MIT licence is not the data's, and the data has no licence of its own
+  here. The data is ANVISA's; `isBasedOn` says so. Tests check that the fila and CMED blocks have none.
 - Serialize with `json.dumps(obj, ensure_ascii=False)` and replace `</` with `<\/` so a value can
   never close the script tag.
 - Validate at https://validator.schema.org after any change. The test suite only checks that
