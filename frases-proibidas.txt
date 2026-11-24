@@ -18,4 +18,11 @@ refeito todo dia
 republicados diariamente
 no máximo um dia
 snapshots diários
-re:\bsem [^\s,]+, sem [^\s,]+
+todo dia
+todos os dias
+diariamente
+uma vez por dia
+nos dias úteis
+por volta das
+re:\bhoje\b
+re:\bsem\s+[^\s,]+,\s+sem\s+[^\s,]+
