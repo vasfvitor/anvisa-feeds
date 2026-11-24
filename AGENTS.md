@@ -118,6 +118,8 @@ Writing (public text is pt-BR, for people who do not know the jargon):
   (PF)), no English where Portuguese exists ("coletas", not "snapshots"), no analogies or wordplay, no
   reassurance or advice not asked for, no vague hedge in place of a known fact ("às vezes demora" when
   the collection has failed since a date). No emojis.
+- The phrases above that a test can match are in `frases-proibidas.txt` at the repo root (identical in
+  the five repos), checked over the source strings by the phrase test; a new one goes in all five lists.
 
 ## SEO
 

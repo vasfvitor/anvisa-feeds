@@ -1,0 +1,21 @@
+# Frases que não entram no texto público (regras em "Public text and data on a page").
+# Uma por linha, sem diferença entre maiúsculas e minúsculas; "re:" no começo para uma expressão
+# regular (escrita para valer igual em JavaScript e em Python). Igual nos cinco repos de saúde.
+saiba mais
+clique aqui
+tudo o que você precisa
+simples assim
+só fatos
+na dúvida, confira
+de forma rápida e fácil
+respostas diretas
+tão em dia quanto
+em tempo real
+sem alteração
+lista atual
+nada substitui
+refeito todo dia
+republicados diariamente
+no máximo um dia
+snapshots diários
+re:\bsem [^\s,]+, sem [^\s,]+
