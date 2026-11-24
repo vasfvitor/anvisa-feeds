@@ -1,5 +1,5 @@
 import json
-from datetime import date
+from datetime import date, datetime
 from xml.etree import ElementTree as ET
 
 from anvisa_feeds.crawl import crawl, dump_json, load_meta, load_snapshot, write_snapshot
@@ -36,23 +36,37 @@ def test_build_site_from_two_days(client, tmp_path):
     assert feed.find(f"{ATOM}id").text == "tag:x.test,2026:f:fila/167"
     entries = feed.findall(f"{ATOM}entry")
     assert [e.find(f"{ATOM}title").text for e in entries] == [
-        "2026-09-07: 1 saiu, 39 mudaram de posição"
+        "07/09/2026: 1 saiu, 39 mudaram de posição"  # public text: DD/MM/AAAA
     ]
+    assert entries[0].find(f"{ATOM}id").text.endswith("/2026-09-07")  # machine field: ISO
     content = entries[0].find(f"{ATOM}content").text
     assert "<code>25351.216322/2025-86</code> <small>exp. " in content
     assert ": saiu da fila (estava na posição 1)" in content
-    assert "Fila hoje (39 processos)" in content  # the newest entry carries the queue
+    # the newest entry carries the queue, dated by its collection, never "hoje"
+    assert "Fila na coleta de 07/09/2026 (39 processos)" in content
     finished = load_meta(snapshots, date(2026, 9, 7))["finished"]
     assert entries[0].find(f"{ATOM}updated").text == finished
 
     page = (site / "fila" / "167.html").read_text(encoding="utf-8")
     assert "Última coleta bem-sucedida" in page and "17 de 17 subfilas" in page
+    shown = datetime.fromisoformat(finished).strftime("%d/%m/%Y %H:%M")
+    assert f"Última coleta bem-sucedida: {shown} (horário de Brasília)" in page
+    assert (
+        "<h2>Mudanças em 07/09/2026</h2>" in page and 'title="A fila de 07/09/2026 em JSON"' in page
+    )
     index = (site / "index.html").read_text(encoding="utf-8")
+    # the FAQ points to the footer's date instead of promising a cadence
+    assert f"Da última coleta bem-sucedida, em {shown} (horário de Brasília)" in index
+    assert "Uma vez por dia" not in index and "snapshot" not in index
     assert "Dispositivos Médicos" in index and 'href="fila/167.xml"' in index
     # ritmo: two days are far from the 35 of 42, so every subfila is "dados incompletos"
     assert 'href="ritmo.html">Ritmo</a>' in index
     rp = (site / "ritmo.html").read_text(encoding="utf-8")
     assert 'id="s167"' in rp and "dados incompletos" in rp and "não dá data prevista" in rp
+    # its own footer names what it computes, not the fila pages' sentence
+    assert "as saídas por semana, a parte “do começo” e a situação de cada subfila" in rp
+    assert "mudou de posição entre uma coleta e a anterior" not in rp
+    assert "nas 6 semanas de " in rp and "2026-09" not in rp.split("<main")[1].split("</main>")[0]
     rj = json.loads((site / "ritmo.json").read_text(encoding="utf-8"))
     r167 = next(s for s in rj["subfilas"] if s["subfila"] == 167)
     assert r167["semanas"] == [0, 0, 0, 0, 0, 1] and r167["situacao"] == "incompleta"
@@ -69,7 +83,7 @@ def test_only_the_newest_entry_carries_the_queue(client, tmp_path):
 
     entries = ET.parse(site / "fila" / "167.xml").getroot().findall(f"{ATOM}entry")
     contents = [e.find(f"{ATOM}content").text for e in entries]
-    assert [c.count("Fila hoje") for c in contents] == [1, 0]
+    assert [c.count("Fila na coleta de 08/09/2026") for c in contents] == [1, 0]
     assert contents[1].startswith("<p>1 saiu, 39 mudaram de posição</p>")  # the 06→07 diff
 
 
@@ -111,7 +125,7 @@ def test_discoverability_files_and_head_tags(client, tmp_path):
         and 'href="https://x.test/f/fila/167.xml">' in head
     )
     assert '<meta name="description" content="Fila de análise da ANVISA, ' in head
-    assert "39 processos em 2026-09-07" in head
+    assert "39 processos em 07/09/2026" in head
     assert '<meta property="og:url" content="https://x.test/f/fila/167.html">' in head
     crumbs = json.loads(head.split('<script type="application/ld+json">')[1].split("</script>")[0])
     assert crumbs["@type"] == "BreadcrumbList"
@@ -188,10 +202,13 @@ def test_a_subfila_the_crawl_failed_on_is_not_shown_as_empty(client, tmp_path):
     assert data["coletada"] is False and data["fila_de"] == "2026-09-06"
     assert len(data["fila"]) == len(day1[167]) > 0
     page = (site / "fila" / "167.html").read_text(encoding="utf-8")
-    assert "não coletada em 2026-09-07" in page
-    assert f"{len(day1[167])} processos em 2026-09-06" in page  # its day, not today
-    assert "processos em 2026-09-07" not in page
-    assert "não coletada hoje" in (site / "index.html").read_text(encoding="utf-8")
+    assert "não coletada em 07/09/2026" in page
+    assert f"{len(day1[167])} processos em 06/09/2026" in page  # its day, not the crawl's
+    assert "processos em 07/09/2026" not in page
+    # the queue shown is the one of 06/09: its caption says so (it said "Fila hoje")
+    assert f"Fila na coleta de 06/09/2026 ({len(day1[167])} processos)" in page
+    index = (site / "index.html").read_text(encoding="utf-8")
+    assert "não coletada em 07/09/2026" in index and "hoje" not in index
     other = json.loads((site / "fila" / f"{next(iter(lines))['subfila']}.json").read_text())
     assert other["coletada"] is True and other["fila_de"] == "2026-09-07"
     novidades = json.loads((site / "meta.json").read_text(encoding="utf-8"))["novidades"]

@@ -30,6 +30,18 @@ REPO_URL = "https://github.com/vasfvitor/anvisa-feeds"
 FILTER_MIN_ROWS = 12  # below this a filter box is noise
 META_SCHEMA_VERSION = 1  # meta.json, the hub's contract (AGENTS.md)
 FOLD_MOVED_ABOVE = 8  # more position changes than this fold into a <details>
+# the footer's data sentence: what is the ANVISA's and what is computed here
+PROVENANCE = (
+    "Dados da ANVISA (API Consultas Externas): as filas como a ANVISA publica; o que "
+    "entrou, saiu e mudou de posição entre uma coleta e a anterior é calculado aqui. "
+    "Não substitui a consulta oficial em consultas.anvisa.gov.br."
+)
+# ritmo.html shows numbers of its own: its footer names them (the rules are on the page)
+RITMO_PROVENANCE = (
+    "Dados da ANVISA (API Consultas Externas): as filas como a ANVISA publica; as saídas por "
+    "semana, a parte “do começo” e a situação de cada subfila são calculadas aqui, a partir das "
+    "coletas, pelas regras acima. Não substitui a consulta oficial em consultas.anvisa.gov.br."
+)
 
 # A small, intentional palette: one accent, two semantic colours for entered/left, the rest
 # greys. Variables so dark mode is one block, not a second style sheet.
@@ -192,9 +204,18 @@ def q(s: str) -> str:
     return html.escape(s, quote=True)
 
 
-def events_html(events: list[dict], queue: list[dict] | None = None) -> str:
-    """The day's events as HTML; with `queue`, the current queue after them. This goes into
-    the Atom entry as well as the page, so it stays semantic HTML that reads fine unstyled."""
+def data_br(d: date | datetime) -> str:
+    """A date as public text shows it: DD/MM/AAAA. Machine fields (Atom ids and <updated>,
+    JSON, the sitemap) stay ISO."""
+    return d.strftime("%d/%m/%Y")
+
+
+def events_html(
+    events: list[dict], queue: list[dict] | None = None, queue_day: date | None = None
+) -> str:
+    """The day's events as HTML; with `queue`, the queue collected on `queue_day` after them.
+    This goes into the Atom entry as well as the page, so it stays semantic HTML that reads fine
+    unstyled."""
     out = ["<p>", html.escape(summary(events)), "</p>"]
     # entries and exits are the news; position changes are mostly the queue closing a gap,
     # so they fold away when there are many (a reader without CSS/JS still shows them all)
@@ -208,7 +229,8 @@ def events_html(events: list[dict], queue: list[dict] | None = None) -> str:
             items = f"<details><summary>{len(moved)} mudaram de posição</summary>{items}</details>"
         out.append(items)
     if queue is not None:
-        out.append(queue_html(queue))
+        assert queue_day is not None
+        out.append(queue_html(queue, queue_day))
     return "".join(out)
 
 
@@ -231,7 +253,7 @@ def history_html(days_events: list[tuple[date, list[dict]]]) -> str:
     out = ["<h2>Dias anteriores</h2>", '<ul class="days">']
     for day, events in reversed(days_events):
         changes = [e for e in events if e["type"] != "moved"]
-        label = f"<b>{day.isoformat()}</b> {html.escape(summary(events))}"
+        label = f"<b>{data_br(day)}</b> {html.escape(summary(events))}"
         if changes:
             items = '<ul class="events">' + "".join(event_li(e) for e in changes) + "</ul>"
             out.append(f"<li><details><summary>{label}</summary>{items}</details></li>")
@@ -241,8 +263,8 @@ def history_html(days_events: list[tuple[date, list[dict]]]) -> str:
     return "".join(out)
 
 
-def queue_html(queue: list[dict]) -> str:
-    caption = f"Fila hoje ({len(queue)} processos)"
+def queue_html(queue: list[dict], day: date) -> str:
+    caption = f"Fila na coleta de {data_br(day)} ({len(queue)} processos)"
     if not queue:
         return f'<p class="empty">{caption}: nenhum processo aguardando análise.</p>'
     rows = [
@@ -365,11 +387,7 @@ def page(
         f'<a href="{REPO_URL}">GitHub</a></nav></div></header>'
     )
     if provenance is None:
-        provenance = (
-            "Dados da ANVISA (API Consultas Externas): as filas como a ANVISA publica; o que "
-            "entrou, saiu e mudou de posição entre uma coleta e a anterior é calculado aqui. "
-            "Não substitui a consulta oficial em consultas.anvisa.gov.br."
-        )
+        provenance = PROVENANCE
     footer = f'<footer><div class="wrap"><p>{stamp}</p><p>{provenance}</p></div></footer>'
     return (
         "".join(head)
@@ -461,7 +479,7 @@ def ritmo_page(
         if contagem["irregular"] > contagem["regular"]
         else " Esta página não dá data prevista."
     )
-    periodo = f"{inicio.isoformat()} a {fim.isoformat()}"
+    periodo = f"{data_br(inicio)} a {data_br(fim)}"
     body = (
         warn + '<p class="lead">Quantos processos saíram de cada subfila por semana nas '
         f"{ritmo.WEEKS} semanas de {periodo}: {resumo}. Das {com_saida} subfilas com alguma "
@@ -482,7 +500,7 @@ def ritmo_page(
     )
     description = (
         f"Ritmo das filas de análise da ANVISA: saídas por semana de {len(ritmos)} subfilas nas "
-        f"{ritmo.WEEKS} semanas até {fim.isoformat()}; "
+        f"{ritmo.WEEKS} semanas até {data_br(fim)}; "
         f"{ritmo.contar(contagem['regular'], 'regular')}, "
         f"{ritmo.contar(contagem['parada'], 'parada')}, sem data prevista."
     )
@@ -495,6 +513,7 @@ def ritmo_page(
             description=description,
             root="",
             nav=nav,
+            provenance=RITMO_PROVENANCE,
         ),
         encoding="utf-8",
     )
@@ -585,7 +604,7 @@ def build_site(
     for sub, (day, _) in stale.items():  # keeps its page even with no diff to show
         history.setdefault(sub, [(day, [])])
 
-    finished = datetime.fromisoformat(meta["finished"]).strftime("%Y-%m-%d %H:%M")
+    finished = datetime.fromisoformat(meta["finished"]).strftime("%d/%m/%Y %H:%M")
     stamp = (
         f"Última coleta bem-sucedida: {finished} (horário de Brasília), "
         f"{meta['subfilas_crawled']} de {meta['subfilas_total']} subfilas, {meta['rows']} processos"
@@ -627,10 +646,10 @@ def build_site(
             entries.append(
                 {
                     "id": tag_uri(base_tag, "fila", str(sub), day.isoformat()),
-                    "title": f"{day.isoformat()}: {summary(events)}",
+                    "title": f"{data_br(day)}: {summary(events)}",
                     "updated": metas[day]["finished"],
                     "link": f"{base_url}/fila/{sub}.html",
-                    "content": events_html(events, queue),
+                    "content": events_html(events, queue, rows_day),
                 }
             )
         (site / "fila" / f"{sub}.xml").write_bytes(
@@ -646,10 +665,10 @@ def build_site(
 
         n = len(rows)
         count = (
-            f"{n} processos em {latest_day.isoformat()}"
+            f"{n} processos em {data_br(latest_day)}"
             if fresh
-            else f"não coletada em {latest_day.isoformat()}; {n} processos na última coleta, "
-            f"em {rows_day.isoformat()}"
+            else f"não coletada em {data_br(latest_day)}; {n} processos na última coleta, "
+            f"em {data_br(rows_day)}"
         )
         area_id, grupo_id = slug(area), f"{slug(area)}--{slug(grupo)}"  # grupo names repeat
         area_href, grupo_href = f"../index.html#{area_id}", f"../index.html#{grupo_id}"
@@ -662,7 +681,8 @@ def build_site(
             f'<a class="pill" href="{sub}.xml" title="Cole este endereço no seu leitor de feeds">'
             f'Feed Atom</a><button class="pill copy" type="button" data-copy="{feed_url}" hidden>'
             "Copiar endereço do feed</button>"
-            f'<a class="pill" href="{sub}.json" title="A fila de hoje em JSON">JSON</a></p>'
+            f'<a class="pill" href="{sub}.json" title="A fila de {data_br(rows_day)} em JSON">'
+            "JSON</a></p>"
         )
         (site / "fila" / f"{sub}.json").write_text(
             json.dumps(
@@ -688,7 +708,7 @@ def build_site(
             encoding="utf-8",
         )
         body = warn + ritmo_linha(ritmos.get(sub), root="../")
-        body += f"<h2>Mudanças em {newest_day.isoformat()}</h2>"
+        body += f"<h2>Mudanças em {data_br(newest_day)}</h2>"
         events, queue_block = entries[0]["content"], ""
         if n >= FILTER_MIN_ROWS:
             # the filter sits right above the table, so split the entry content around it
@@ -700,8 +720,8 @@ def build_site(
         body += events + queue_block + history_html(days_events[:-1])
         description = (
             f"Fila de análise da ANVISA, {name} ({grupo}, {area}): "
-            f"{n} processos em {rows_day.isoformat()}. "
-            "Feed Atom com entradas, saídas e mudanças de posição diárias."
+            f"{n} processos em {data_br(rows_day)}. "
+            "Feed Atom com entradas, saídas e mudanças de posição entre uma coleta e a anterior."
         )
         crumbs = {
             "@context": "https://schema.org",
@@ -789,13 +809,13 @@ def build_site(
         by_area.setdefault(area, {}).setdefault(grupo, []).append((name, sub))
     index_description = (
         f"Filas de análise da ANVISA, coletadas da consulta pública: {len(history)} subfilas, "
-        f"um feed Atom por subfila; última coleta em {latest_day.strftime('%d/%m/%Y')}."
+        f"um feed Atom por subfila; última coleta em {data_br(latest_day)}."
     )
     lines = [
         warn,
         '<p class="lead">As <strong>filas de análise da ANVISA</strong>, as petições que aguardam '
         f"análise, coletadas da consulta pública, com um feed Atom por subfila. {len(history)} "
-        f"filas; última coleta em {latest_day.strftime('%d/%m/%Y')}.</p>",
+        f"filas; última coleta em {data_br(latest_day)}.</p>",
         '<div class="box"><strong>Como acompanhar seu processo.</strong> Encontre a subfila '
         "abaixo e abra a página: a fila inteira está lá, com um filtro por número de processo. "
         "Para receber as mudanças, copie o endereço do <em>feed</em> e cole no seu leitor "
@@ -808,7 +828,8 @@ def build_site(
         lines.append(
             '<p class="lead">Também aqui: os <a href="cmed/index.html">preços máximos de '
             "medicamentos da CMED</a>, a lista mensal em feeds por substância e por "
-            f"laboratório; última lista de {cmed['publicado_em'][:10]}.</p>"
+            f"laboratório; a mais recente é a lista no arquivo da ANVISA de "
+            f"{cmed['publicado_em'][:10]}.</p>"
         )
     lines.append('<nav class="toc" aria-label="Áreas">')
     for area in sorted(by_area):
@@ -829,7 +850,11 @@ def build_site(
             for name, sub in sorted(by_area[area][grupo]):
                 n = len(stale[sub][1] if sub in stale else latest.get(sub, []))
                 zero = " zero" if n == 0 or sub in stale else ""
-                label = "não coletada hoje" if sub in stale else (f"{n} na fila" if n else "vazia")
+                label = (
+                    f"não coletada em {data_br(latest_day)}"
+                    if sub in stale
+                    else (f"{n} na fila" if n else "vazia")
+                )
                 lines.append(
                     f'<li><span class="t"><a href="fila/{sub}.html">{html.escape(name)}</a></span>'
                     f'<span class="n{zero}">{label}</span>'
@@ -841,11 +866,15 @@ def build_site(
     lines.append("</div>")
     lines += [
         '<section id="faq"><h2>Perguntas frequentes</h2>',
-        "<h3>Com que frequência os dados são atualizados?</h3>",
-        "<p>Uma vez por dia. O horário da última coleta bem-sucedida aparece no rodapé de cada "
-        "página; se ele parar de avançar, a coleta falhou e nenhuma mudança é inventada.</p>",
+        "<h3>De quando são os dados?</h3>",
+        f"<p>Da última coleta bem-sucedida, em {finished} (horário de Brasília), a data que o "
+        "rodapé de cada página mostra. Uma subfila que não respondeu nessa coleta mostra a "
+        "última fila coletada, com o dia dela. Uma coleta que falhou não gera mudança nenhuma: "
+        "as páginas seguem com a anterior.</p>",
         "<h3>O que significam “entrou”, “saiu” e “mudou de posição”?</h3>",
-        "<p>São a diferença entre o snapshot de hoje e o de ontem para aquela subfila. "
+        "<p>São a diferença entre uma coleta e a anterior para aquela subfila. Se a subfila não "
+        "respondeu numa coleta, ou se a coleta de um dia falhou, a diferença cobre o período "
+        "desde a última coleta dela. "
         "“Saiu da fila” quer dizer que o processo não aparece mais na fila de análise; "
         "o resultado da análise só está na consulta oficial.</p>",
         *(
