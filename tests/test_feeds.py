@@ -135,6 +135,7 @@ def test_discoverability_files_and_head_tags(client, tmp_path):
     assert ld["temporalCoverage"] == "2026-09-06/.."  # first snapshot ever
     assert ld["spatialCoverage"]["name"] == "Brasil" and ld["publisher"]["name"] == "anvisa-feeds"
     assert ld["distribution"][0]["contentUrl"] == "https://x.test/f/feeds.opml"
+    assert "license" not in ld  # the code's MIT licence is not the data's
 
     # meta.json: the latest day's meta plus totals, for other sites to read
     summary = json.loads((site / "meta.json").read_text(encoding="utf-8"))

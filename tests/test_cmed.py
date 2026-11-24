@@ -223,7 +223,10 @@ def test_first_month_builds_feeds_without_a_diff(dados, client, tmp_path):
     assert entries[0].find(f"{ATOM}title").text == "Lista de 09/10/2026: sem mudanças"
     assert entries[0].find(f"{ATOM}id").text.endswith("/acebrofilina/20261009")
     content = entries[0].find(f"{ATOM}content").text
-    assert "Lista atual (2 apresentações)" in content and "ACEBROFILINA" in content
+    assert (
+        "Lista no arquivo da ANVISA de 09/10/2026 (2 apresentações)" in content
+        and "ACEBROFILINA" in content
+    )
     raw = (cmed_dir / "substancia" / "acebrofilina.xml").read_bytes()
     assert b'href="../feed.xsl"' in raw and b"dados: CMED/ANVISA" in raw
     assert b'href="feed.xsl"' in (cmed_dir / "geral.xml").read_bytes()
@@ -273,7 +276,7 @@ def test_second_month_diffs_and_groups(dados, client, tmp_path):
     content = entries[0].find(f"{ATOM}content").text
     assert "BAYCUTEN N" in content and "R$ 30,73 → R$ 33,80 +10,0 %" in content
     assert "tarja: - (*) → Tarja Vermelha" in content
-    assert "Lista atual (3 apresentações)" in content
+    assert "Lista no arquivo da ANVISA de 09/11/2026 (3 apresentações)" in content
     page = (cmed_dir / "laboratorio" / "18459628000115.html").read_text(encoding="utf-8")
     assert "Listas anteriores" not in page  # nothing before the first diff
     general = ET.parse(cmed_dir / "geral.xml").getroot()

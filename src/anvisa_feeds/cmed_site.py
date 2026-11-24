@@ -31,7 +31,8 @@ SOURCE_URL = "https://www.gov.br/anvisa/pt-br/assuntos/medicamentos/cmed/precos"
 DATA_URL = "https://dados.anvisa.gov.br/dados/"
 PROVENANCE = (
     f'Dados da CMED/ANVISA (a <a href="{SOURCE_URL}">lista mensal de preços</a>, nos arquivos '
-    f'abertos de <a href="{DATA_URL}">dados.anvisa.gov.br</a>), reproduzidos sem alteração. '
+    f'abertos de <a href="{DATA_URL}">dados.anvisa.gov.br</a>): os preços como a ANVISA publica; '
+    "o que entrou, saiu e mudou entre uma lista e a anterior é calculado aqui. "
     "Preços máximos, não preços praticados; não substitui a lista oficial."
 )
 # what counts as a change between months: every column but the key, the derived root, the
@@ -238,9 +239,12 @@ def change_li(e: dict) -> str:
     return f'<li class="moved">{name}: {"; ".join(parts) or "mudou"}</li>'
 
 
-def events_html(events: list[dict], current: list[dict] | None, *, group_by: str) -> str:
-    """A month's events for one group as HTML; with `current`, the group's rows after them.
-    Goes into the Atom entry and the page alike."""
+def events_html(
+    events: list[dict], current: list[dict] | None, *, group_by: str, stamp: str
+) -> str:
+    """A month's events for one group as HTML; with `current`, the group's rows after them, in the
+    list of `stamp` (the day of the ANVISA file's Last-Modified). Goes into the Atom entry and the
+    page alike."""
     out = ["<p>", html.escape(summary_keyed(events)), "</p>"]
     if events:
         out.append('<ul class="events">' + "".join(change_li(e) for e in events) + "</ul>")
@@ -249,7 +253,8 @@ def events_html(events: list[dict], current: list[dict] | None, *, group_by: str
             rows_table(
                 current,
                 group_by=group_by,
-                caption=f"Lista atual ({n(len(current))} apresentações)",
+                caption=f"Lista no arquivo da ANVISA de {month_label(stamp)}"
+                f" ({n(len(current))} apresentações)",
                 table_id="rows",
             )
         )
@@ -353,7 +358,10 @@ def build_cmed(
                     if ident
                     else f"{base_url}/cmed/geral.html",
                     "content": events_html(
-                        events, current if stamp == newest_stamp else None, group_by=group_by
+                        events,
+                        current if stamp == newest_stamp else None,
+                        group_by=group_by,
+                        stamp=stamp,
                     ),
                 }
             )
@@ -621,8 +629,8 @@ def build_cmed(
         "alterados.</p>",
         "<h3>Isto é um serviço da ANVISA ou da CMED?</h3>",
         f'<p>Não. É um projeto independente e de <a href="{feeds.REPO_URL}">código aberto</a> que '
-        f"republica "
-        "os dados públicos sem alteração. Não substitui a lista oficial.</p></section>",
+        "lê a lista da CMED nos arquivos abertos da ANVISA; o rodapé de cada página diz o que é "
+        "calculado aqui.</p></section>",
     ]
     dataset = {
         "@context": "https://schema.org",
@@ -631,7 +639,6 @@ def build_cmed(
         "description": index_description,
         "url": f"{base_url}/cmed/",
         "sameAs": feeds.REPO_URL,
-        "license": "https://opensource.org/licenses/MIT",
         "isBasedOn": SOURCE_URL,
         "creator": org,
         "publisher": org,

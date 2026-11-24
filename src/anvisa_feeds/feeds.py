@@ -366,7 +366,8 @@ def page(
     )
     if provenance is None:
         provenance = (
-            "Dados da ANVISA (API Consultas Externas), reproduzidos sem alteração. "
+            "Dados da ANVISA (API Consultas Externas): as filas como a ANVISA publica; o que "
+            "entrou, saiu e mudou de posição entre uma coleta e a anterior é calculado aqui. "
             "Não substitui a consulta oficial em consultas.anvisa.gov.br."
         )
     footer = f'<footer><div class="wrap"><p>{stamp}</p><p>{provenance}</p></div></footer>'
@@ -787,15 +788,14 @@ def build_site(
         name, grupo, area = describe(catalog, sub)
         by_area.setdefault(area, {}).setdefault(grupo, []).append((name, sub))
     index_description = (
-        f"Snapshots diários das filas de análise da ANVISA: {len(history)} subfilas, "
-        f"um feed Atom cada, atualizados em {latest_day.isoformat()}. "
-        "Acompanhe a posição do seu processo sem cadastro."
+        f"Filas de análise da ANVISA, coletadas da consulta pública: {len(history)} subfilas, "
+        f"um feed Atom por subfila; última coleta em {latest_day.strftime('%d/%m/%Y')}."
     )
     lines = [
         warn,
-        '<p class="lead">Snapshots diários das <strong>filas de análise da ANVISA</strong>, as '
-        f"petições que aguardam análise, um feed Atom por subfila. {len(history)} filas; "
-        f"última coleta em {latest_day.isoformat()}.</p>",
+        '<p class="lead">As <strong>filas de análise da ANVISA</strong>, as petições que aguardam '
+        f"análise, coletadas da consulta pública, com um feed Atom por subfila. {len(history)} "
+        f"filas; última coleta em {latest_day.strftime('%d/%m/%Y')}.</p>",
         '<div class="box"><strong>Como acompanhar seu processo.</strong> Encontre a subfila '
         "abaixo e abra a página: a fila inteira está lá, com um filtro por número de processo. "
         "Para receber as mudanças, copie o endereço do <em>feed</em> e cole no seu leitor "
@@ -860,8 +860,8 @@ def build_site(
         ),
         "<h3>Isto é um serviço da ANVISA?</h3>",
         f'<p>Não. É um projeto independente e de <a href="{REPO_URL}">código aberto</a> que '
-        "republica os dados públicos da ANVISA sem alteração. Não substitui a consulta oficial "
-        "em consultas.anvisa.gov.br.</p></section>",
+        "coleta as filas na consulta pública da ANVISA; o rodapé de cada página diz o que é "
+        "calculado aqui.</p></section>",
     ]
     dataset = {
         "@context": "https://schema.org",
@@ -870,7 +870,6 @@ def build_site(
         "description": index_description,
         "url": f"{base_url}/",
         "sameAs": REPO_URL,
-        "license": "https://opensource.org/licenses/MIT",
         "isBasedOn": "https://consultas.anvisa.gov.br",
         "creator": org,
         "publisher": org,
