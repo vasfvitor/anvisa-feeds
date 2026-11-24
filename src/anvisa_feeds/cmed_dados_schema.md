@@ -10,15 +10,17 @@ calculada aqui.
 
 ## Versão do contrato
 
-`produtos.json`, `todos.json` e `substancias.json` trazem `schema_version`, hoje `1`, como o manifest do
-anvisa-api. Ela só muda quando quem lê precisa mudar para continuar lendo: um campo novo não muda a versão;
-um campo que sai, muda de nome ou de sentido muda. Os arquivos de antes de novembro de 2026 não têm a
-chave.
+`produtos.json`, `todos.json` e `substancias.json` trazem `schema_version` (`1` nesta versão do
+esquema), como o manifest do anvisa-api. Ela só muda quando quem lê precisa mudar para continuar lendo:
+um campo novo não muda a versão; um campo que sai, muda de nome ou de sentido muda. Os arquivos de antes
+de novembro de 2026 não têm a chave.
 
 ## `produtos.json`
 
-`{stamp, publicado_em, situacao_fonte, produtos: [...]}`. `stamp` é o mês da lista (`AAAAMMDD`),
-`publicado_em` a data de publicação da CMED. `situacao_fonte` é o build dos dados abertos da ANVISA de
+`{stamp, publicado_em, situacao_fonte, produtos: [...]}`. `publicado_em` é o Last-Modified do arquivo
+de PMC da lista em dados.anvisa.gov.br, no horário de Brasília (`DD/MM/AAAA HH:MM:SS`): a data do arquivo
+da ANVISA, não uma data de publicação da CMED, que os arquivos não trazem. `stamp` é o dia desse
+Last-Modified (`AAAAMMDD`) e nomeia a lista aqui. `situacao_fonte` é o build dos dados abertos da ANVISA de
 onde vieram `situacao` e `medidas` (`{build_id, built_at}`), ou `null` quando aquela fonte não pôde ser
 lida neste build: nesse caso os produtos vêm sem `situacao` e `medidas`, e isso quer dizer "não
 conferido", não "nada a informar". Cada item:

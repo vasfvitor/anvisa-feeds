@@ -32,7 +32,8 @@ DATA_URL = "https://dados.anvisa.gov.br/dados/"
 PROVENANCE = (
     f'Dados da CMED/ANVISA (a <a href="{SOURCE_URL}">lista mensal de preços</a>, nos arquivos '
     f'abertos de <a href="{DATA_URL}">dados.anvisa.gov.br</a>): os preços como a ANVISA publica; '
-    "o que entrou, saiu e mudou entre uma lista e a anterior é calculado aqui. "
+    "o que entrou, saiu e mudou entre uma lista e a anterior, a variação percentual dos preços "
+    "e as maiores altas e baixas de PF são calculados aqui. "
     "Preços máximos, não preços praticados; não substitui a lista oficial."
 )
 # what counts as a change between months: every column but the key, the derived root, the
@@ -117,6 +118,29 @@ def month_label(stamp: str) -> str:
     return f"{stamp[6:8]}/{stamp[4:6]}/{stamp[0:4]}"
 
 
+def lista(stamp: str, *, inicio: bool = False) -> str:
+    """How a page names a list: by the day of the ANVISA file's Last-Modified, which is the only
+    date the data has (it is not CMED's own date for the list). `inicio` capitalizes it."""
+    texto = f"lista no arquivo da ANVISA de {month_label(stamp)}"
+    return texto[0].upper() + texto[1:] if inicio else texto
+
+
+def comparacao(stamp: str, anterior: str | None, *, inicio: bool = False) -> str:
+    """What a diff compares: "lista no arquivo da ANVISA de 09/11/2026 contra a de 09/10/2026";
+    the list alone when there is no earlier one."""
+    if anterior is None:
+        return lista(stamp, inicio=inicio)
+    return f"{lista(stamp, inicio=inicio)} contra a de {month_label(anterior)}"
+
+
+# the summary of a list with nothing to compare it with: not "sem mudanças"
+PRIMEIRA = "a primeira lista guardada aqui, sem comparação"
+
+
+def resumo(events: list[dict], anterior: str | None) -> str:
+    return summary_keyed(events) if anterior else PRIMEIRA
+
+
 def nav(root: str) -> list[tuple[str, str]]:
     return [
         (f"{root}cmed/index.html", TITLE),
@@ -186,8 +210,6 @@ def page_tables(content: str) -> str:
 
 
 def rows_table(rows: list[dict], *, group_by: str, caption: str, table_id: str = "") -> str:
-    if not rows:
-        return f'<p class="empty">{html.escape(caption)}: nenhuma apresentação.</p>'
     who = "Substância" if group_by == "cnpj" else "Laboratório"
     out = [
         f'<table class="queue" id="{table_id}"><caption>{html.escape(caption)}</caption>'
@@ -240,21 +262,30 @@ def change_li(e: dict) -> str:
 
 
 def events_html(
-    events: list[dict], current: list[dict] | None, *, group_by: str, stamp: str
+    events: list[dict],
+    current: list[dict] | None,
+    *,
+    group_by: str,
+    stamp: str,
+    anterior: str | None,
 ) -> str:
-    """A month's events for one group as HTML; with `current`, the group's rows after them, in the
-    list of `stamp` (the day of the ANVISA file's Last-Modified). Goes into the Atom entry and the
-    page alike."""
-    out = ["<p>", html.escape(summary_keyed(events)), "</p>"]
+    """A month's events for one group as HTML, against the list of `anterior` (None for the first
+    list); with `current`, the group's rows after them, in the list of `stamp` (the day of the
+    ANVISA file's Last-Modified). Goes into the Atom entry and the page alike."""
+    out = ["<p>", html.escape(resumo(events, anterior)), "</p>"]
     if events:
         out.append('<ul class="events">' + "".join(change_li(e) for e in events) + "</ul>")
-    if current is not None:
+    if current is not None and not current:
+        quem = "deste laboratório" if group_by == "cnpj" else "desta substância"
+        out.append(
+            f'<p class="empty">{lista(stamp, inicio=True)}: nenhuma apresentação {quem}.</p>'
+        )
+    elif current is not None:
         out.append(
             rows_table(
                 current,
                 group_by=group_by,
-                caption=f"Lista no arquivo da ANVISA de {month_label(stamp)}"
-                f" ({n(len(current))} apresentações)",
+                caption=f"{lista(stamp, inicio=True)} ({n(len(current))} apresentações)",
                 table_id="rows",
             )
         )
@@ -328,15 +359,20 @@ def build_cmed(
     if not history:
         history = [(latest_stamp, [])]  # the first list ever: no diff yet
     meta = metas[latest_stamp]
-    fetched = datetime.fromisoformat(meta["fetched"]).strftime("%Y-%m-%d %H:%M")
+    fetched = datetime.fromisoformat(meta["fetched"]).strftime("%d/%m/%Y %H:%M")
     stamp_text = (
-        f"Última lista: {month_label(latest_stamp)} ({n(meta['rows'])} apresentações), lida em "
+        f"{lista(latest_stamp, inicio=True)} ({n(meta['rows'])} apresentações), baixada em "
         f"{fetched} (horário de Brasília)."
     )
     org = {"@type": "Organization", "name": "anvisa-feeds", "url": feeds.REPO_URL}
     pages: list[tuple[str, str]] = []
     by_month = {stamp: events for stamp, events in history}
     newest_stamp, newest_events = history[-1]
+    # the list each one is compared with (the first in the window has none)
+    anterior: dict[str, str | None] = {
+        latest_stamp: None,
+        **dict(zip(window[1:], window[:-1], strict=True)),
+    }
 
     def feed_entries(
         events_by_month: dict[str, list[dict]],
@@ -352,7 +388,7 @@ def build_cmed(
             entries.append(
                 {
                     "id": feeds.tag_uri(base_tag, "cmed", kind, ident, stamp),
-                    "title": f"Lista de {month_label(stamp)}: {summary_keyed(events)}",
+                    "title": f"{lista(stamp, inicio=True)}: {resumo(events, anterior[stamp])}",
                     "updated": metas[stamp]["fetched"],
                     "link": f"{base_url}/cmed/{kind}/{ident}.html"
                     if ident
@@ -362,6 +398,7 @@ def build_cmed(
                         current if stamp == newest_stamp else None,
                         group_by=group_by,
                         stamp=stamp,
+                        anterior=anterior[stamp],
                     ),
                 }
             )
@@ -400,8 +437,8 @@ def build_cmed(
             f"<a "
             f'href="../index.html#{kind}">{section}</a></nav>'
             f"<h1>{breakable(name)}</h1>"
-            f'<p class="meta"><span>{n(count)} apresentações na lista de '
-            f"{month_label(latest_stamp)}</span>{extra}"
+            f'<p class="meta"><span>{lista(latest_stamp, inicio=True)}: {n(count)} '
+            f"apresentações</span>{extra}"
             f'<a class="pill" href="{ident}.xml" title="Cole este endereço no seu leitor de '
             f'feeds">Feed Atom</a>'
             f'<button class="pill copy" type="button" data-copy="{feed_url}" hidden>Copiar '
@@ -424,7 +461,13 @@ def build_cmed(
             + "\n",
             encoding="utf-8",
         )
-        body = warn + f"<h2>Mudanças na lista de {month_label(newest_stamp)}</h2>"
+        # what the diff compares; the first list has no diff, and its page says so under "Mudanças"
+        comparado = (
+            comparacao(newest_stamp, anterior[newest_stamp], inicio=True)
+            if anterior[newest_stamp]
+            else "Mudanças"
+        )
+        body = warn + f"<h2>{comparado}</h2>"
         content = page_tables(entries[0]["content"])
         table_block = ""
         if count >= FILTER_MIN_ROWS and PAGE_TABLE in content:
@@ -436,8 +479,8 @@ def build_cmed(
             )
         body += content + table_block + history_html(history[:-1], events_by_month)
         description = (
-            f"Preços máximos de medicamentos da CMED, {name}: {count} apresentações na lista de "
-            f"{month_label(latest_stamp)}. Feed Atom com o que entrou, saiu e mudou de preço a "
+            f"Preços máximos de medicamentos da CMED, {name}: {count} apresentações "
+            f"({lista(latest_stamp)}). Feed Atom com o que entrou, saiu e mudou de preço a "
             f"cada lista."
         )
         crumbs = {
@@ -536,8 +579,8 @@ def build_cmed(
     release_url = f"{feeds.REPO_URL}/releases/tag/{RELEASE_TAG.format(stamp=latest_stamp)}"
     index_description = (
         f"Preços máximos de medicamentos da CMED: {n(meta['rows'])} apresentações, "
-        f"{n(len(subst_names))} substâncias, {n(len(by_lab))} laboratórios, lista de "
-        f"{month_label(latest_stamp)}. Um feed Atom por substância e por laboratório com o que "
+        f"{n(len(subst_names))} substâncias, {n(len(by_lab))} laboratórios, "
+        f"{lista(latest_stamp)}. Um feed Atom por substância e por laboratório com o que "
         "entrou, saiu e mudou de preço a cada lista mensal."
     )
     lines = [
@@ -546,12 +589,9 @@ def build_cmed(
         f"CMED</strong>, "
         f"{n(meta['rows'])} apresentações de {n(len(subst_names))} substâncias e {len(by_lab)} "
         f"laboratórios, "
-        f"comparada com a lista anterior a cada mês. Lista de {month_label(latest_stamp)}"
-        + (
-            f"; na anterior, {summary_keyed(newest_events)}."
-            if len(window) > 1
-            else "; a primeira lista guardada, sem comparação ainda."
-        )
+        "comparada com a lista anterior. "
+        + comparacao(newest_stamp, anterior[newest_stamp], inicio=True)
+        + f": {resumo(newest_events, anterior[newest_stamp])}."
         + "</p>",
         '<div class="box"><strong>Como acompanhar.</strong> Abra a substância (o princípio ativo) '
         "ou o "
@@ -572,13 +612,19 @@ def build_cmed(
         "vez por "
         "ano, em março ou abril: nesse mês quase tudo muda.</div>",
     ]
+    comparado = comparacao(newest_stamp, anterior[newest_stamp])
     if moves:
-        lines.append(f"<h2>Maiores altas de PF na lista de {month_label(newest_stamp)}</h2>")
+        lines.append(f"<h2>Maiores altas de PF: {comparado}</h2>")
+        lines.append(
+            f"<p>Variação do preço fábrica (PF) à alíquota 0 % entre as duas listas, calculada "
+            f"aqui: (PF novo − PF anterior) ÷ PF anterior. As {TOP_MOVES} maiores altas e as "
+            f"{TOP_MOVES} maiores baixas entre as apresentações que têm PF nas duas.</p>"
+        )
         lines.append(moves_table(list(reversed(moves))[:TOP_MOVES], subst_slug))
-        lines.append(f"<h2>Maiores baixas de PF na lista de {month_label(newest_stamp)}</h2>")
+        lines.append(f"<h2>Maiores baixas de PF: {comparado}</h2>")
         lines.append(moves_table(moves[:TOP_MOVES], subst_slug))
     if counts["entered"] or counts["left"]:
-        lines.append(f"<h2>Entradas e saídas na lista de {month_label(newest_stamp)}</h2>")
+        lines.append(f"<h2>Entradas e saídas: {comparado}</h2>")
         lines.append(
             '<ul class="events">'
             + "".join(change_li(e) for e in newest_events if e["type"] != "changed")
@@ -813,7 +859,7 @@ def history_html(
     """Earlier months on a group's page, newest first: the summary, the events on demand."""
     if not earlier:
         return ""
-    out = ["<h2>Listas anteriores</h2>", '<ul class="days">']
+    out = ["<h2>Listas anteriores, pela data do arquivo da ANVISA</h2>", '<ul class="days">']
     for stamp, _ in reversed(earlier):
         events = events_by_month.get(stamp, [])
         label = f"<b>{month_label(stamp)}</b> {html.escape(summary_keyed(events))}"

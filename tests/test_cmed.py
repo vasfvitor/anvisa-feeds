@@ -220,7 +220,10 @@ def test_first_month_builds_feeds_without_a_diff(dados, client, tmp_path):
     assert subst.find(f"{ATOM}id").text == "tag:x.test,2026:f:cmed/substancia/acebrofilina"
     entries = subst.findall(f"{ATOM}entry")
     assert len(entries) == 1
-    assert entries[0].find(f"{ATOM}title").text == "Lista de 09/10/2026: sem mudanças"
+    # the first list has nothing to compare with: not "sem mudanças"
+    assert entries[0].find(f"{ATOM}title").text == (
+        "Lista no arquivo da ANVISA de 09/10/2026: a primeira lista guardada aqui, sem comparação"
+    )
     assert entries[0].find(f"{ATOM}id").text.endswith("/acebrofilina/20261009")
     content = entries[0].find(f"{ATOM}content").text
     assert (
@@ -246,6 +249,17 @@ def test_first_month_builds_feeds_without_a_diff(dados, client, tmp_path):
     assert data["mudancas"] == []
     index = (cmed_dir / "index.html").read_text(encoding="utf-8")
     assert "a primeira lista guardada" in index and "releases/tag/cmed-20261009" in index
+    assert "sem mudanças" not in index and "sem mudanças" not in page
+    assert "<h2>Mudanças</h2><p>a primeira lista guardada aqui, sem comparação</p>" in page
+    # the footer dates the list by the ANVISA file and says when it was downloaded
+    assert "<p>Lista no arquivo da ANVISA de 09/10/2026 (23 apresentações), baixada em " in index
+    assert "Última lista" not in index and "a cada mês" not in index
+    start = index.index('<script type="application/ld+json">') + len(
+        '<script type="application/ld+json">'
+    )
+    ld = json.loads(index[start : index.index("</script>", start)])
+    assert ld["@type"] == "Dataset"
+    assert "license" not in ld  # the code's MIT licence is not the data's
     assert index.count('<a class="feed"') == 20 + 16
     opml = ET.parse(cmed_dir / "cmed.opml").getroot()
     assert len(opml.findall(".//outline[@type='rss']")) == 1 + 20 + 16
@@ -272,16 +286,25 @@ def test_second_month_diffs_and_groups(dados, client, tmp_path):
     bayer = ET.parse(cmed_dir / "laboratorio" / "18459628000115.xml").getroot()
     entries = bayer.findall(f"{ATOM}entry")
     # like the filas: the first list has no diff, so the feed carries one entry per later list
-    assert [e.find(f"{ATOM}title").text for e in entries] == ["Lista de 09/11/2026: 1 mudou"]
+    assert [e.find(f"{ATOM}title").text for e in entries] == [
+        "Lista no arquivo da ANVISA de 09/11/2026: 1 mudou"
+    ]
     content = entries[0].find(f"{ATOM}content").text
     assert "BAYCUTEN N" in content and "R$ 30,73 → R$ 33,80 +10,0 %" in content
     assert "tarja: - (*) → Tarja Vermelha" in content
     assert "Lista no arquivo da ANVISA de 09/11/2026 (3 apresentações)" in content
     page = (cmed_dir / "laboratorio" / "18459628000115.html").read_text(encoding="utf-8")
     assert "Listas anteriores" not in page  # nothing before the first diff
+    # the heading says what the diff compares; the count is dated by the same file
+    assert (
+        "<h2>Lista no arquivo da ANVISA de 09/11/2026 contra a de 09/10/2026</h2>" in page
+        and "Lista no arquivo da ANVISA de 09/11/2026: 3 apresentações</span>" in page
+    )
     general = ET.parse(cmed_dir / "geral.xml").getroot()
     newest = general.findall(f"{ATOM}entry")[0]
-    assert newest.find(f"{ATOM}title").text == "Lista de 09/11/2026: 1 entrou, 2 mudaram, 1 saiu"
+    assert newest.find(f"{ATOM}title").text == (
+        "Lista no arquivo da ANVISA de 09/11/2026: 1 entrou, 2 mudaram, 1 saiu"
+    )
     assert "ZOLGENSMA" in newest.find(f"{ATOM}content").text
     d = meta["destaques"]
     assert d["altas"][0]["produto"] == "BAYCUTEN N" and d["altas"][0]["variacao"] == 10.0
@@ -295,11 +318,21 @@ def test_second_month_diffs_and_groups(dados, client, tmp_path):
     ] is None
     index = (cmed_dir / "index.html").read_text(encoding="utf-8")
     assert "Maiores altas de PF" in index and "BAYCUTEN N" in index
+    comparado = "lista no arquivo da ANVISA de 09/11/2026 contra a de 09/10/2026"
+    assert f"<h2>Maiores altas de PF: {comparado}</h2>" in index
+    assert f"<h2>Entradas e saídas: {comparado}</h2>" in index
+    assert "(PF novo − PF anterior) ÷ PF anterior" in index  # the ranking says how
+    assert "Lista no arquivo da ANVISA de 09/11/2026 contra a de 09/10/2026: 1 entrou" in index
     assert "NOVO" in index and "ZOLGENSMA" in index
     # the new substância has a page and the one that left keeps a page saying so
     assert (cmed_dir / "substancia" / "nova-substancia.html").exists()
     page = (cmed_dir / "substancia" / "onasemnogeno-abeparvoveque.html").read_text(encoding="utf-8")
     assert "saiu da lista" in page
+    # its empty group is its own sentence, not a caption with "(0 apresentações)"
+    assert (
+        "Lista no arquivo da ANVISA de 09/11/2026: nenhuma apresentação desta substância." in page
+    )
+    assert "(0 apresentações)" not in page
     data = json.loads(
         (cmed_dir / "substancia" / "nova-substancia.json").read_text(encoding="utf-8")
     )
