@@ -84,7 +84,20 @@ def test_only_the_newest_entry_carries_the_queue(client, tmp_path):
     entries = ET.parse(site / "fila" / "167.xml").getroot().findall(f"{ATOM}entry")
     contents = [e.find(f"{ATOM}content").text for e in entries]
     assert [c.count("Fila na coleta de 08/09/2026") for c in contents] == [1, 0]
-    assert contents[1].startswith("<p>1 saiu, 39 mudaram de posição</p>")  # the 06→07 diff
+    # the 06→07 diff names the two collections it compares
+    assert contents[1].startswith(
+        "<p>Coleta de 07/09/2026 contra a de 06/09/2026: 1 saiu, 39 mudaram de posição</p>"
+    )
+    # consecutive days: no "cobre N dias", and the title stays the day and its summary
+    assert "a comparação cobre" not in "".join(contents)
+    assert [e.find(f"{ATOM}title").text for e in entries][1] == (
+        "07/09/2026: 1 saiu, 39 mudaram de posição"
+    )
+    page = (site / "fila" / "167.html").read_text(encoding="utf-8")
+    assert "<b>Coleta de 07/09/2026</b>contra a de 06/09/2026: 1 saiu" in page  # earlier days
+    meta = json.loads((site / "meta.json").read_text(encoding="utf-8"))["novidades"]
+    assert meta["dia"] == "2026-09-08" and meta["base"] == "2026-09-07"
+    assert meta["filas"][0]["base"] == "2026-09-07"
 
 
 def test_discoverability_files_and_head_tags(client, tmp_path):
@@ -162,6 +175,7 @@ def test_discoverability_files_and_head_tags(client, tmp_path):
     # the day's movers: process 1 left subfila 167 (see next_day)
     nov = summary["novidades"]
     assert nov["dia"] == "2026-09-07" and nov["sairam"] == 1 and nov["entraram"] == 0
+    assert nov["base"] == "2026-09-06"  # the collection the day is compared against
     assert nov["filas_com_movimento"] == 1 and nov["filas"][0]["subfila"] == 167
     assert nov["filas"][0]["pagina"] == "https://x.test/f/fila/167.html"
     assert nov["filas"][0]["fila"] == 39 and nov["filas"][0]["sairam"] == 1
@@ -237,3 +251,40 @@ def test_a_missed_day_does_not_lose_the_events_around_it(client, tmp_path):
     data = json.loads((site / "fila" / "167.json").read_text(encoding="utf-8"))
     assert data["coletada"] is True and data["dia"] == "2026-09-08"
     assert [e["type"] for e in data["mudancas"]].count("left") == 1
+    # the exit is compared against 06/09, and the feed and page say the comparison spans two days
+    gap = "Coleta de 08/09/2026 contra a de 06/09/2026 (a comparação cobre 2 dias: esta subfila"
+    entries = ET.parse(site / "fila" / "167.xml").getroot().findall(f"{ATOM}entry")
+    assert entries[0].find(f"{ATOM}content").text.startswith(f"<p>{gap}")
+    assert entries[0].find(f"{ATOM}title").text.startswith("08/09/2026 (contra a coleta de 06/09")
+    assert gap in (site / "fila" / "167.html").read_text(encoding="utf-8")
+    # meta.json: the crawl base is the day before, this subfila's own base is 06/09
+    novidades = json.loads((site / "meta.json").read_text(encoding="utf-8"))["novidades"]
+    assert novidades["base"] == "2026-09-07"
+    (m167,) = [m for m in novidades["filas"] if m["subfila"] == 167]
+    assert m167["base"] == "2026-09-06" and m167["sairam"] == 1
+
+
+def test_a_missed_crawl_day_shows_in_the_comparison(client, tmp_path):
+    # no snapshot for 07/09 at all: the 08/09 diff is against 06/09, for the crawl and the pages
+    snapshots, site = tmp_path / "snapshots", tmp_path / "site"
+    crawl(client, snapshots, day=date(2026, 9, 6), areas=[8], log=lambda s: None)
+    next_day(snapshots, date(2026, 9, 6), date(2026, 9, 8))
+    build_site(snapshots, site, base_url="https://x.test/f", base_tag="x.test,2026:f")
+    nov = json.loads((site / "meta.json").read_text(encoding="utf-8"))["novidades"]
+    assert nov["dia"] == "2026-09-08" and nov["base"] == "2026-09-06" and nov["sairam"] == 1
+    page = (site / "fila" / "167.html").read_text(encoding="utf-8")
+    assert "Coleta de 08/09/2026 contra a de 06/09/2026 (a comparação cobre 2 dias" in page
+
+
+def test_a_single_snapshot_compares_nothing(client, tmp_path):
+    # the first collection has no base: no "sem mudanças", and meta.json leaves base out
+    snapshots, site = tmp_path / "snapshots", tmp_path / "site"
+    crawl(client, snapshots, day=date(2026, 9, 6), areas=[8], log=lambda s: None)
+    build_site(snapshots, site, base_url="https://x.test/f", base_tag="x.test,2026:f")
+    nov = json.loads((site / "meta.json").read_text(encoding="utf-8"))["novidades"]
+    assert "base" not in nov and nov["filas"] == []
+    entry = ET.parse(site / "fila" / "167.xml").getroot().find(f"{ATOM}entry")
+    assert entry.find(f"{ATOM}title").text == (
+        "06/09/2026: sem coleta anterior desta subfila para comparar"
+    )
+    assert "sem mudanças" not in (site / "fila" / "167.html").read_text(encoding="utf-8")

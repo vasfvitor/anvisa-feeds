@@ -366,6 +366,26 @@ def test_pages_fit_a_phone_and_the_feeds_keep_their_content(dados, client, tmp_p
         assert "scroll" not in feed and "wbr" not in feed and 'class="queue"' in feed
 
 
+def test_prices_are_spelled_out_and_the_yearly_adjustment_cites_the_law(dados, client, tmp_path):
+    _, site, _ = site_with_months(dados, client, tmp_path, 2)
+    index = (site / "cmed" / "index.html").read_text(encoding="utf-8")
+    lab = (site / "cmed" / "laboratorio" / "18459628000115.html").read_text(encoding="utf-8")
+    for page in (index, lab):
+        main = page.split("<main")[1]
+        # each page spells PF, PMC and PMVG out before it first uses them, and only once
+        first = re.search(r"\b(PF|PMC|PMVG)\b", main).start()
+        assert main.index(cmed_site.SIGLAS) == first
+        assert main.count("preço fábrica") == 1
+    # the yearly adjustment: the law, linked, with the day it was checked; no month promised
+    lei = cmed_site.AJUSTE_ANUAL
+    assert (
+        f'<a href="{lei["url"]}">Lei 10.742/2003, art. 4º, § 7º</a>, conferida em 25/11/2026'
+        in (index)
+    )
+    assert lei["url"].startswith("https://www.planalto.gov.br/")
+    assert "março ou abril" not in index and "reajusta" not in index
+
+
 def test_long_substancia_names_get_short_stable_slugs():
     name = "A" * 300
     slugs = cmed_site.unique_slugs([name, "B"])

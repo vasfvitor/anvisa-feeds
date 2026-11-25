@@ -14,7 +14,7 @@ import html
 import json
 import re
 from collections import Counter
-from datetime import datetime
+from datetime import date, datetime
 from pathlib import Path
 from xml.etree import ElementTree as ET
 
@@ -36,6 +36,30 @@ PROVENANCE = (
     "e as maiores altas e baixas de PF são calculados aqui. "
     "Preços máximos, não preços praticados; não substitui a lista oficial."
 )
+# the three prices, spelled out once on every page that shows them
+SIGLAS = (
+    "PF é o preço fábrica, o teto do laboratório; PMC, o preço máximo ao consumidor, o teto na "
+    "farmácia; PMVG, o preço máximo de venda ao governo."
+)
+# A fact the data cannot give: one entry, with the law that states it and the day that law was
+# read (planalto.gov.br, art. 4º, § 7º: "Os ajustes de preços ocorrerão anualmente."). The law
+# does not fix the month, so the page does not name one.
+AJUSTE_ANUAL = {
+    "texto": "Os preços são ajustados uma vez por ano",
+    "fonte": "Lei 10.742/2003, art. 4º, § 7º",
+    "url": "https://www.planalto.gov.br/ccivil_03/leis/2003/l10.742.htm",
+    "conferido": date(2026, 11, 25),
+}
+
+
+def ajuste_anual() -> str:
+    a = AJUSTE_ANUAL
+    return (
+        f'{a["texto"]} (<a href="{a["url"]}">{a["fonte"]}</a>, conferida em '
+        f"{feeds.data_br(a['conferido'])})."
+    )
+
+
 # what counts as a change between months: every column but the key, the derived root, the
 # publication date, the two "shown but not applicable" flags and the year the comercialização
 # column refers to (the header says "COMERCIALIZAÇÃO 2025"; the year it rolls over, every row
@@ -467,7 +491,7 @@ def build_cmed(
             if anterior[newest_stamp]
             else "Mudanças"
         )
-        body = warn + f"<h2>{comparado}</h2>"
+        body = warn + f"<p>{SIGLAS}</p><h2>{comparado}</h2>"
         content = page_tables(entries[0]["content"])
         table_block = ""
         if count >= FILTER_MIN_ROWS and PAGE_TABLE in content:
@@ -593,6 +617,7 @@ def build_cmed(
         + comparacao(newest_stamp, anterior[newest_stamp], inicio=True)
         + f": {resumo(newest_events, anterior[newest_stamp])}."
         + "</p>",
+        f'<div class="box">{SIGLAS} {ajuste_anual()}</div>',
         '<div class="box"><strong>Como acompanhar.</strong> Abra a substância (o princípio ativo) '
         "ou o "
         "laboratório abaixo: a página lista as apresentações com PF, PMC e PMVG à alíquota 0 % e o "
@@ -606,17 +631,12 @@ def build_cmed(
         f'href="{release_url}">release</a> '
         "do repositório; a tabela completa, em Parquet, no "
         '<a href="https://vasfvitor.github.io/anvisa-api/">anvisa-api</a>.</div>',
-        '<div class="box">PF é o preço fábrica, o teto do laboratório; PMC o preço máximo ao '
-        "consumidor, "
-        "o teto na farmácia; PMVG o preço máximo de venda ao governo. A CMED reajusta a lista uma "
-        "vez por "
-        "ano, em março ou abril: nesse mês quase tudo muda.</div>",
     ]
     comparado = comparacao(newest_stamp, anterior[newest_stamp])
     if moves:
         lines.append(f"<h2>Maiores altas de PF: {comparado}</h2>")
         lines.append(
-            f"<p>Variação do preço fábrica (PF) à alíquota 0 % entre as duas listas, calculada "
+            f"<p>Variação do PF à alíquota 0 % entre as duas listas, calculada "
             f"aqui: (PF novo − PF anterior) ÷ PF anterior. As {TOP_MOVES} maiores altas e as "
             f"{TOP_MOVES} maiores baixas entre as apresentações que têm PF nas duas.</p>"
         )
@@ -670,9 +690,6 @@ def build_cmed(
         "<p>Qualquer campo da apresentação diferente entre a lista deste mês e a do mês anterior: "
         "preço em "
         "qualquer alíquota, regime, tarja, lista PIS/COFINS, laboratório, nome.</p>",
-        "<h3>Por que quase tudo muda em março ou abril?</h3>",
-        "<p>É o reajuste anual autorizado pela CMED. A lista desse mês traz quase todos os preços "
-        "alterados.</p>",
         "<h3>Isto é um serviço da ANVISA ou da CMED?</h3>",
         f'<p>Não. É um projeto independente e de <a href="{feeds.REPO_URL}">código aberto</a> que '
         "lê a lista da CMED nos arquivos abertos da ANVISA; o rodapé de cada página diz o que é "

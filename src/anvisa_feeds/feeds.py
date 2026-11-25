@@ -210,13 +210,46 @@ def data_br(d: date | datetime) -> str:
     return d.strftime("%d/%m/%Y")
 
 
+# a subfila's diff with no earlier collection of it to compare with: not "sem mudanças"
+SEM_BASE = "sem coleta anterior desta subfila para comparar"
+
+
+def comparacao(dia: date, base: date | None, events: list[dict]) -> tuple[str, str]:
+    """What a day's diff compares, as (head, tail): ("Coleta de 25/11/2026", " contra a de
+    24/11/2026: 1 saiu"). When the two collections are not consecutive days (the crawl or this
+    subfila failed in between), the tail says how many days the comparison spans. `base` None:
+    no earlier collection of the subfila, so nothing is compared."""
+    head = f"Coleta de {data_br(dia)}"
+    if base is None:
+        return head, f", {SEM_BASE}"
+    tail = f" contra a de {data_br(base)}"
+    dias = (dia - base).days
+    if dias > 1:
+        tail += f" (a comparação cobre {dias} dias: esta subfila não foi coletada entre as duas)"
+    return head, f"{tail}: {summary(events)}"
+
+
+def entry_title(dia: date, base: date | None, events: list[dict]) -> str:
+    """A feed entry's title: the day and its summary; the base day only when it is not the day
+    before, and no "sem mudanças" when there was nothing to compare with."""
+    if base is None:
+        return f"{data_br(dia)}: {SEM_BASE}"
+    contra = f" (contra a coleta de {data_br(base)})" if (dia - base).days > 1 else ""
+    return f"{data_br(dia)}{contra}: {summary(events)}"
+
+
 def events_html(
-    events: list[dict], queue: list[dict] | None = None, queue_day: date | None = None
+    events: list[dict],
+    queue: list[dict] | None = None,
+    queue_day: date | None = None,
+    *,
+    day: date,
+    base: date | None,
 ) -> str:
-    """The day's events as HTML; with `queue`, the queue collected on `queue_day` after them.
-    This goes into the Atom entry as well as the page, so it stays semantic HTML that reads fine
-    unstyled."""
-    out = ["<p>", html.escape(summary(events)), "</p>"]
+    """The events of `day`, against the collection of `base`, as HTML; with `queue`, the queue
+    collected on `queue_day` after them. This goes into the Atom entry as well as the page, so it
+    stays semantic HTML that reads fine unstyled."""
+    out = ["<p>", html.escape("".join(comparacao(day, base, events))), "</p>"]
     # entries and exits are the news; position changes are mostly the queue closing a gap,
     # so they fold away when there are many (a reader without CSS/JS still shows them all)
     changes = [e for e in events if e["type"] != "moved"]
@@ -245,15 +278,16 @@ def event_li(e: dict) -> str:
     return f'<li class="moved">{p}: {e["de"]} → {e["para"]}</li>'
 
 
-def history_html(days_events: list[tuple[date, list[dict]]]) -> str:
-    """Earlier days on the page, newest first: the summary, and entries/exits on demand.
-    Position changes are only counted; the feed has them in full."""
+def history_html(days_events: list[tuple[date, date | None, list[dict]]]) -> str:
+    """Earlier days on the page, newest first: what each compares and its summary, and
+    entries/exits on demand. Position changes are only counted; the feed has them in full."""
     if not days_events:
         return ""
     out = ["<h2>Dias anteriores</h2>", '<ul class="days">']
-    for day, events in reversed(days_events):
+    for day, base, events in reversed(days_events):
         changes = [e for e in events if e["type"] != "moved"]
-        label = f"<b>{data_br(day)}</b> {html.escape(summary(events))}"
+        head, tail = comparacao(day, base, events)
+        label = f"<b>{html.escape(head)}</b>{html.escape(tail.lstrip())}"  # b has a margin
         if changes:
             items = '<ul class="events">' + "".join(event_li(e) for e in changes) + "</ul>"
             out.append(f"<li><details><summary>{label}</summary>{items}</details></li>")
@@ -574,8 +608,9 @@ def build_site(
     (site / "fila").mkdir(parents=True, exist_ok=True)
     (site / "feed.xsl").write_text(FEED_XSL, encoding="utf-8")
 
-    # rolling pair of days: events per subfila per day, oldest first; only the latest queues kept
-    history: dict[int, list[tuple[date, list[dict]]]] = {}
+    # rolling pair of days: events per subfila per day with the day they are compared against
+    # (the subfila's previous collection), oldest first; only the latest queues kept
+    history: dict[int, list[tuple[date, date | None, list[dict]]]] = {}
     prev: dict[int, list[dict]] | None = None
     # the last day each subfila was actually collected, with its queue
     collected: dict[int, tuple[date, list[dict]]] = {}
@@ -583,7 +618,8 @@ def build_site(
         curr = load_snapshot(snapshots, day)
         if prev is not None:
             for sub, events in diff_snapshots(prev, curr).items():
-                history.setdefault(sub, []).append((day, events))
+                # prev holds a subfila only once collected, so `collected` has its day
+                history.setdefault(sub, []).append((day, collected[sub][0], events))
         collected.update({sub: (day, rows) for sub, rows in curr.items()})
         # a subfila the crawl failed on keeps its last queue, so the next day's diff still sees
         # what entered and left meanwhile; one dropped from the catalog is not carried
@@ -591,7 +627,7 @@ def build_site(
         prev = {**{s: rows for s, rows in (prev or {}).items() if s in failed}, **curr}
     latest_day, latest = window[-1], curr  # the window is never empty (checked above)
     for sub in latest:
-        history.setdefault(sub, [(latest_day, [])])  # seen only on the latest day
+        history.setdefault(sub, [(latest_day, None, [])])  # seen only on the latest day
 
     meta = metas[latest_day]
     # a subfila the latest crawl failed on is not empty: it was not collected, and its pages say
@@ -602,7 +638,7 @@ def build_site(
         if f["subfila"] in collected and f["subfila"] not in latest
     }
     for sub, (day, _) in stale.items():  # keeps its page even with no diff to show
-        history.setdefault(sub, [(day, [])])
+        history.setdefault(sub, [(day, None, [])])
 
     finished = datetime.fromisoformat(meta["finished"]).strftime("%d/%m/%Y %H:%M")
     stamp = (
@@ -639,17 +675,17 @@ def build_site(
         rows_day, rows = stale[sub] if not fresh else (latest_day, latest.get(sub, []))
         entries = []
         feed_url = f"{base_url}/fila/{sub}.xml"
-        for day, events in reversed(days_events):
+        for day, base, events in reversed(days_events):
             # full queue only once, on the newest entry
             has_queue = sub in latest or not fresh
             queue = rows if day == newest_day and has_queue else None
             entries.append(
                 {
                     "id": tag_uri(base_tag, "fila", str(sub), day.isoformat()),
-                    "title": f"{data_br(day)}: {summary(events)}",
+                    "title": entry_title(day, base, events),
                     "updated": metas[day]["finished"],
                     "link": f"{base_url}/fila/{sub}.html",
-                    "content": events_html(events, queue, rows_day),
+                    "content": events_html(events, queue, rows_day, day=day, base=base),
                 }
             )
         (site / "fila" / f"{sub}.xml").write_bytes(
@@ -695,7 +731,7 @@ def build_site(
                     "coleta": meta["finished"],
                     "pagina": f"{base_url}/fila/{sub}.html",
                     "feed": feed_url,
-                    "mudancas": days_events[-1][1] if newest_day == latest_day else [],
+                    "mudancas": days_events[-1][2] if newest_day == latest_day else [],
                     # false when the latest crawl failed on this subfila: `fila` is then the
                     # queue of `fila_de`, the last day it was collected, not an empty queue
                     "coletada": fresh,
@@ -965,7 +1001,7 @@ def build_site(
     # the day's busiest subfilas, for the hub's "what moved today": entries and exits only
     movers = []
     for sub, days_events in history.items():
-        day, events = days_events[-1]
+        day, base, events = days_events[-1]
         if day != latest_day:
             continue
         entered = sum(1 for e in events if e["type"] == "entered")
@@ -981,12 +1017,18 @@ def build_site(
                     "entraram": entered,
                     "sairam": left,
                     "fila": len(latest.get(sub, [])),
+                    # this subfila's previous collection: earlier than novidades.base when the
+                    # crawl failed on it then
+                    "base": base.isoformat() if base else None,
                     "pagina": f"{base_url}/fila/{sub}.html",
                 }
             )
     movers.sort(key=lambda m: (-(m["entraram"] + m["sairam"]), m["nome"]))
     site_meta["novidades"] = {
         "dia": latest_day.isoformat(),
+        # the crawl the day's entries and exits are compared against: the previous snapshot,
+        # more than a day back when a crawl was missed; absent with a single snapshot
+        **({"base": window[-2].isoformat()} if len(window) > 1 else {}),
         "filas_com_movimento": len(movers),
         "entraram": sum(m["entraram"] for m in movers),
         "sairam": sum(m["sairam"] for m in movers),

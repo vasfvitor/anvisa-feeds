@@ -24,7 +24,14 @@ time of the last successful fetch. It does not replace the official consulta.
    entry per subfila per day; its content lists the day's events and the queue as it stands.
    Feeds carry an XSL style sheet, so a browser shows a readable page instead of raw XML.
    The root also gets `meta.json`: the latest crawl's counts and timings plus the catalog
-   totals, for other sites to read.
+   totals, for other sites to read. Its `novidades` block is the latest day's busiest subfilas:
+   `dia` (the latest collection), `base` (the collection its entries and exits are compared
+   against, the previous snapshot day: more than a day back when a crawl was missed, absent
+   when there is a single snapshot), the totals `filas_com_movimento`, `entraram` and `sairam`,
+   and `filas`, the top ten, each with its own `base` (earlier than the block's when the crawl
+   failed on that subfila the day before). Each page and feed entry names the same two
+   collections ("Coleta de 25/11/2026 contra a de 24/11/2026") and says when they are more
+   than a day apart.
    Every page links its feed for reader auto-discovery and carries canonical, description and
    Open Graph tags; the build also writes `sitemap.xml`, `robots.txt`, `feeds.opml`, a
    schema.org `Dataset` block on the index, and `fila/<id>.json` with each subfila's queue
@@ -67,8 +74,10 @@ anything else. It works like the filas, with a month instead of a day:
    are PF, PMC and PMVG at ICMS 0 %; the JSON carries a short subset of columns, the Parquet
    all 102. Without CMED snapshots the build is the fila site alone.
 
-CMED readjusts the list once a year, in March or April: that month almost every presentation
-changes. The pages say so.
+Prices are adjusted once a year: Lei 10.742/2003, art. 4º, § 7º ("Os ajustes de preços
+ocorrerão anualmente"). The CMED index says so with a link to the law and the day it was checked
+(`cmed_site.AJUSTE_ANUAL`); the month of the adjustment is not stated, since the law does not
+fix it and the snapshots do not yet span one.
 
 ## Running it yourself
 
