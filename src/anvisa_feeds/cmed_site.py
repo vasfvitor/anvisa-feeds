@@ -126,10 +126,10 @@ def n(value: int) -> str:
 
 def cnpj_fmt(cnpj: str) -> str:
     """A CNPJ as people write it: '00029372000140' → '00.029.372/0001-40'. Anything that is not
-    14 letters or digits (the alphanumeric CNPJ keeps the same mask) comes back as it is."""
+    14 letters or digits (the alphanumeric CNPJ keeps the same mask) comes back stripped."""
     c = cnpj.strip()
     if len(c) != 14 or not c.isalnum() or not c.isascii():
-        return cnpj
+        return c
     return f"{c[:2]}.{c[2:5]}.{c[5:8]}/{c[8:12]}-{c[12:]}"
 
 
@@ -564,17 +564,19 @@ def build_cmed(
             item=name,
         )
 
-    # laboratórios, by CNPJ; the name is the latest row's
+    # laboratórios, by CNPJ; the name is the latest row's ("" when no row names it)
     by_lab: dict[str, list[dict]] = {}
-    lab_name: dict[str, str] = {}
+    lab_nome: dict[str, str] = {}
     for r in latest.values():
         if r.get("cnpj"):
             by_lab.setdefault(r["cnpj"], []).append(r)
-            lab_name.setdefault(r["cnpj"], r.get("laboratorio") or r["cnpj"])
+            lab_nome.setdefault(r["cnpj"], r.get("laboratorio") or "")
     lab_events = {stamp: group_events(events, "cnpj") for stamp, events in history}
     for g in lab_events.values():
         for cnpj, evs in g.items():
-            lab_name.setdefault(cnpj, (evs[0]["old"] or evs[0]["row"]).get("laboratorio") or cnpj)
+            lab_nome.setdefault(cnpj, (evs[0]["old"] or evs[0]["row"]).get("laboratorio") or "")
+    # how pages, feeds, the index and the OPML name a laboratório: a nameless one by its CNPJ
+    lab_name = {c: nome or f"CNPJ {cnpj_fmt(c)}" for c, nome in lab_nome.items()}
     for cnpj in sorted(set(by_lab) | {k for g in lab_events.values() for k in g}):
         write_group(
             "laboratorio",
@@ -583,8 +585,8 @@ def build_cmed(
             by_lab.get(cnpj, []),
             {stamp: g.get(cnpj, []) for stamp, g in lab_events.items()},
             group_by="cnpj",
-            extra=f"<span>CNPJ {cnpj}</span>",
-            item=f"{lab_name[cnpj]} (CNPJ {cnpj_fmt(cnpj)})",
+            extra=f"<span>CNPJ {cnpj_fmt(cnpj)}</span>" if lab_nome[cnpj] else "",
+            item=f"{lab_nome[cnpj]} (CNPJ {cnpj_fmt(cnpj)})" if lab_nome[cnpj] else lab_name[cnpj],
         )
 
     # the general feed: every event of the month, no table (the index has the highlights)

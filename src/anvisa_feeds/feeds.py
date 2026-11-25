@@ -157,6 +157,122 @@ document.addEventListener('keydown',function(e){
   if(f&&e.key==='/'&&document.activeElement!==f){e.preventDefault();f.focus();}});
 """.strip()
 
+
+def tag_uri(base_tag: str, *parts: str) -> str:
+    return f"tag:{base_tag}:" + "/".join(parts)
+
+
+def slug(text: str) -> str:
+    """ASCII anchor id: 'Dispositivos Médicos' → 'dispositivos-medicos'."""
+    ascii_ = unicodedata.normalize("NFKD", text).encode("ascii", "ignore").decode()
+    return re.sub(r"[^a-z0-9]+", "-", ascii_.lower()).strip("-") or "x"
+
+
+def q(s: str) -> str:
+    return html.escape(s, quote=True)
+
+
+def relato_urls(pagina: str, item: str = "", titulo: str = "") -> tuple[str, str]:
+    """The two ways to report a problem with a page, as (GitHub issue form, mailto), both
+    prefilled: `pagina` is the page's canonical URL, `item` what it is about with its identifier
+    ("subfila 167 (Registro de Medicamentos)"), empty on a page not about one item, and `titulo`
+    the page title, used for the subject when there is no item. Every value is percent-encoded
+    (spaces as %20, like encodeURIComponent); escape the result with q() inside an attribute."""
+    return relato_links(pagina, item, f"Problema em {item or titulo}")
+
+
+def _enc(s: str) -> str:
+    return quote(s, safe="")
+
+
+def relato_links(pagina: str, item: str, assunto: str) -> tuple[str, str]:
+    """relato_urls with the issue title and e-mail subject given whole. The mail body breaks
+    lines with CRLF, as RFC 6068 asks."""
+    issue = (
+        f"{REPO_URL}/issues/new?template=problema.yml&title={_enc(assunto)}"
+        f"&pagina={_enc(pagina)}&item={_enc(item)}"
+    )
+    corpo = (
+        f"Página: {pagina}\r\nItem: {item}\r\n\r\nO que está errado:\r\n\r\n"
+        "O que a fonte oficial mostra (link):\r\n"
+    )
+    return issue, f"mailto:{RELATO_EMAIL}?subject={_enc(assunto)}&body={_enc(corpo)}"
+
+
+def relato(pagina: str, item: str) -> str:
+    """The full sentence, after the data of a page about one item."""
+    issue, mailto = relato_urls(pagina, item)
+    return (
+        f'<p class="relato">Encontrou um erro? <a href="{q(issue)}">Abra um relato no GitHub</a> '
+        f'(precisa de conta) ou <a href="{q(mailto)}">escreva para {RELATO_EMAIL}</a>. O relato '
+        "no GitHub é público: não inclua dados pessoais.</p>"
+    )
+
+
+def relato_rodape(pagina: str, titulo: str) -> str:
+    """The footer's short form, on every page: the page URL prefilled, no item."""
+    issue, mailto = relato_urls(pagina, titulo=titulo)
+    return _rodape_html(q(issue), q(mailto))
+
+
+def _rodape_html(issue: str, mailto: str) -> str:
+    """The footer sentence around two hrefs already escaped for HTML or XML."""
+    return (
+        f'Encontrou um erro? <a href="{issue}">Relato no GitHub</a> (público: não inclua dados '
+        f'pessoais) ou <a href="{mailto}">{RELATO_EMAIL}</a>.'
+    )
+
+
+# The report links of the feed pages (feed.xsl), as XSLT attribute value templates. XSLT 1.0
+# cannot percent-encode, so the feed's self URL goes through the `troca` template, which escapes
+# ":" and "/"; a self URL holds no other character a query must escape (test_relato.py checks
+# every feed). The item is left empty and the subject is fixed.
+_PAGINA, _ASSUNTO = "\x00pagina\x00", "\x00assunto\x00"
+ASSUNTO_FEED_FILA = "Problema num feed de fila"
+ASSUNTO_FEED = "Problema num feed"
+
+
+def _xsl_href(url: str) -> str:
+    return q(url).replace(_enc(_PAGINA), "{$pagina}").replace(_enc(_ASSUNTO), "{$assunto}")
+
+
+def _xsl_troca(var: str, origem: str, de: str, para: str) -> str:
+    return (
+        f'<xsl:variable name="{var}"><xsl:call-template name="troca">'
+        f'<xsl:with-param name="s" select="{origem}"/>'
+        f'<xsl:with-param name="de" select="\'{de}\'"/>'
+        f'<xsl:with-param name="para" select="\'{para}\'"/>'
+        "</xsl:call-template></xsl:variable>"
+    )
+
+
+_issue_xsl, _mailto_xsl = relato_links(_PAGINA, "", _ASSUNTO)
+FEED_XSL_RELATO = (
+    '<xsl:variable name="self" select="atom:feed/atom:link[@rel=\'self\']/@href"/>'
+    + _xsl_troca("sem_dois_pontos", "$self", ":", _enc(":"))
+    + _xsl_troca("pagina", "$sem_dois_pontos", "/", _enc("/"))
+    + '<xsl:variable name="assunto"><xsl:choose>'
+    f"<xsl:when test=\"contains($self, '/fila/')\">{_enc(ASSUNTO_FEED_FILA)}</xsl:when>"
+    f"<xsl:otherwise>{_enc(ASSUNTO_FEED)}</xsl:otherwise></xsl:choose></xsl:variable>"
+    f'<footer><div class="wrap"><p>{_rodape_html(_xsl_href(_issue_xsl), _xsl_href(_mailto_xsl))}'
+    "</p></div></footer>"
+)
+
+# replaces each `de` in `s` with `para`; feed.xsl's report links call it on the self URL
+_XSL_TROCA_TEMPLATE = """<xsl:template name="troca">
+<xsl:param name="s"/><xsl:param name="de"/><xsl:param name="para"/>
+<xsl:choose>
+<xsl:when test="contains($s, $de)">
+<xsl:value-of select="substring-before($s, $de)"/><xsl:value-of select="$para"/>
+<xsl:call-template name="troca">
+<xsl:with-param name="s" select="substring-after($s, $de)"/>
+<xsl:with-param name="de" select="$de"/><xsl:with-param name="para" select="$para"/>
+</xsl:call-template>
+</xsl:when>
+<xsl:otherwise><xsl:value-of select="$s"/></xsl:otherwise>
+</xsl:choose>
+</xsl:template>"""
+
 FEED_XSL = f"""<?xml version="1.0" encoding="utf-8"?>
 <xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
   xmlns:atom="http://www.w3.org/2005/Atom" exclude-result-prefixes="atom">
@@ -188,65 +304,12 @@ A versão para ler no navegador está em
 <p class="hint">O conteúdo de cada entrada aparece no seu leitor de feeds;
 no navegador, abra a página da fila.</p>
 </main>
+{FEED_XSL_RELATO}
 </body></html>
 </xsl:template>
+{_XSL_TROCA_TEMPLATE}
 </xsl:stylesheet>
 """
-
-
-def tag_uri(base_tag: str, *parts: str) -> str:
-    return f"tag:{base_tag}:" + "/".join(parts)
-
-
-def slug(text: str) -> str:
-    """ASCII anchor id: 'Dispositivos Médicos' → 'dispositivos-medicos'."""
-    ascii_ = unicodedata.normalize("NFKD", text).encode("ascii", "ignore").decode()
-    return re.sub(r"[^a-z0-9]+", "-", ascii_.lower()).strip("-") or "x"
-
-
-def q(s: str) -> str:
-    return html.escape(s, quote=True)
-
-
-def relato_urls(pagina: str, item: str = "", titulo: str = "") -> tuple[str, str]:
-    """The two ways to report a problem with a page, as (GitHub issue form, mailto), both
-    prefilled: `pagina` is the page's canonical URL, `item` what it is about with its identifier
-    ("subfila 167 (Registro de Medicamentos)"), empty on a page not about one item, and `titulo`
-    the page title, used for the subject when there is no item. Every value is percent-encoded
-    (spaces as %20, like encodeURIComponent); escape the result with q() inside an attribute."""
-
-    def enc(s: str) -> str:
-        return quote(s, safe="")
-
-    assunto = f"Problema em {item or titulo}"
-    issue = (
-        f"{REPO_URL}/issues/new?template=problema.yml&title={enc(assunto)}"
-        f"&pagina={enc(pagina)}&item={enc(item)}"
-    )
-    corpo = (
-        f"Página: {pagina}\nItem: {item}\n\nO que está errado:\n\n"
-        "O que a fonte oficial mostra (link):\n"
-    )
-    return issue, f"mailto:{RELATO_EMAIL}?subject={enc(assunto)}&body={enc(corpo)}"
-
-
-def relato(pagina: str, item: str) -> str:
-    """The full sentence, after the data of a page about one item."""
-    issue, mailto = relato_urls(pagina, item)
-    return (
-        f'<p class="relato">Encontrou um erro? <a href="{q(issue)}">Abra um relato no GitHub</a> '
-        f'(precisa de conta) ou <a href="{q(mailto)}">escreva para {RELATO_EMAIL}</a>. O relato '
-        "no GitHub é público: não inclua dados pessoais.</p>"
-    )
-
-
-def relato_rodape(pagina: str, titulo: str) -> str:
-    """The footer's short form, on every page: the page URL prefilled, no item."""
-    issue, mailto = relato_urls(pagina, titulo=titulo)
-    return (
-        f'Encontrou um erro? <a href="{q(issue)}">Relato no GitHub</a> ou '
-        f'<a href="{q(mailto)}">{RELATO_EMAIL}</a>.'
-    )
 
 
 def data_br(d: date | datetime) -> str:
