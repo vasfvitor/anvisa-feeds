@@ -578,6 +578,7 @@ def build_cmed(
     # how pages, feeds, the index and the OPML name a laboratório: a nameless one by its CNPJ
     lab_name = {c: nome or f"CNPJ {cnpj_fmt(c)}" for c, nome in lab_nome.items()}
     for cnpj in sorted(set(by_lab) | {k for g in lab_events.values() for k in g}):
+        nome, cnpj_txt = lab_nome[cnpj], f"CNPJ {cnpj_fmt(cnpj)}"
         write_group(
             "laboratorio",
             cnpj,
@@ -585,8 +586,8 @@ def build_cmed(
             by_lab.get(cnpj, []),
             {stamp: g.get(cnpj, []) for stamp, g in lab_events.items()},
             group_by="cnpj",
-            extra=f"<span>CNPJ {cnpj_fmt(cnpj)}</span>" if lab_nome[cnpj] else "",
-            item=f"{lab_nome[cnpj]} (CNPJ {cnpj_fmt(cnpj)})" if lab_nome[cnpj] else lab_name[cnpj],
+            extra=f"<span>{cnpj_txt}</span>" if nome else "",
+            item=f"{nome} ({cnpj_txt})" if nome else cnpj_txt,
         )
 
     # the general feed: every event of the month, no table (the index has the highlights)

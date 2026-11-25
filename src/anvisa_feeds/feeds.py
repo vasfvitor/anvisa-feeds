@@ -185,18 +185,28 @@ def _enc(s: str) -> str:
     return quote(s, safe="")
 
 
+# the fixed parts of both links, encoded once (percent-encoding is per character, so encoding
+# the parts apart and joining them equals encoding the whole)
+_ISSUE_TITLE = f"{REPO_URL}/issues/new?template=problema.yml&title="
+_MAILTO_SUBJECT = f"mailto:{RELATO_EMAIL}?subject="
+_CORPO_PAGINA, _CORPO_ITEM, _CORPO_FIM = map(
+    _enc,
+    (
+        "Página: ",
+        "\r\nItem: ",
+        "\r\n\r\nO que está errado:\r\n\r\nO que a fonte oficial mostra (link):\r\n",
+    ),
+)
+
+
 def relato_links(pagina: str, item: str, assunto: str) -> tuple[str, str]:
     """relato_urls with the issue title and e-mail subject given whole. The mail body breaks
     lines with CRLF, as RFC 6068 asks."""
-    issue = (
-        f"{REPO_URL}/issues/new?template=problema.yml&title={_enc(assunto)}"
-        f"&pagina={_enc(pagina)}&item={_enc(item)}"
+    pagina, item, assunto = _enc(pagina), _enc(item), _enc(assunto)
+    return (
+        f"{_ISSUE_TITLE}{assunto}&pagina={pagina}&item={item}",
+        f"{_MAILTO_SUBJECT}{assunto}&body={_CORPO_PAGINA}{pagina}{_CORPO_ITEM}{item}{_CORPO_FIM}",
     )
-    corpo = (
-        f"Página: {pagina}\r\nItem: {item}\r\n\r\nO que está errado:\r\n\r\n"
-        "O que a fonte oficial mostra (link):\r\n"
-    )
-    return issue, f"mailto:{RELATO_EMAIL}?subject={_enc(assunto)}&body={_enc(corpo)}"
 
 
 def relato(pagina: str, item: str) -> str:
