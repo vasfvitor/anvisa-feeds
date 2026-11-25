@@ -16,6 +16,7 @@ import re
 import unicodedata
 from datetime import date, datetime
 from pathlib import Path
+from urllib.parse import quote
 from xml.etree import ElementTree as ET
 
 from . import __version__, ritmo
@@ -27,6 +28,8 @@ ATOM = "http://www.w3.org/2005/Atom"
 SITEMAP = "http://www.sitemaps.org/schemas/sitemap/0.9"
 SITE_NAME = "Filas de análise da ANVISA"
 REPO_URL = "https://github.com/vasfvitor/anvisa-feeds"
+# a reader's other way to report a problem, besides .github/ISSUE_TEMPLATE/problema.yml
+RELATO_EMAIL = "ajuda@abelhaninja.de"
 FILTER_MIN_ROWS = 12  # below this a filter box is noise
 META_SCHEMA_VERSION = 1  # meta.json, the hub's contract (AGENTS.md)
 FOLD_MOVED_ABOVE = 8  # more position changes than this fold into a <details>
@@ -122,6 +125,7 @@ h1,ul.filas .t{overflow-wrap:anywhere}
 .empty{color:var(--muted);font-style:italic}
 footer{border-top:1px solid var(--line);color:var(--muted);font-size:.85em;padding:1rem 0 2rem}
 footer p{margin:.25rem 0}
+.relato{color:var(--muted);font-size:.85em;margin-top:1.5rem}
 .entry{margin:1.5rem 0}
 @media(max-width:40rem){table.queue td.d,table.queue th.d{display:none}h1{font-size:1.3rem}}
 """.strip()
@@ -202,6 +206,47 @@ def slug(text: str) -> str:
 
 def q(s: str) -> str:
     return html.escape(s, quote=True)
+
+
+def relato_urls(pagina: str, item: str = "", titulo: str = "") -> tuple[str, str]:
+    """The two ways to report a problem with a page, as (GitHub issue form, mailto), both
+    prefilled: `pagina` is the page's canonical URL, `item` what it is about with its identifier
+    ("subfila 167 (Registro de Medicamentos)"), empty on a page not about one item, and `titulo`
+    the page title, used for the subject when there is no item. Every value is percent-encoded
+    (spaces as %20, like encodeURIComponent); escape the result with q() inside an attribute."""
+
+    def enc(s: str) -> str:
+        return quote(s, safe="")
+
+    assunto = f"Problema em {item or titulo}"
+    issue = (
+        f"{REPO_URL}/issues/new?template=problema.yml&title={enc(assunto)}"
+        f"&pagina={enc(pagina)}&item={enc(item)}"
+    )
+    corpo = (
+        f"Página: {pagina}\nItem: {item}\n\nO que está errado:\n\n"
+        "O que a fonte oficial mostra (link):\n"
+    )
+    return issue, f"mailto:{RELATO_EMAIL}?subject={enc(assunto)}&body={enc(corpo)}"
+
+
+def relato(pagina: str, item: str) -> str:
+    """The full sentence, after the data of a page about one item."""
+    issue, mailto = relato_urls(pagina, item)
+    return (
+        f'<p class="relato">Encontrou um erro? <a href="{q(issue)}">Abra um relato no GitHub</a> '
+        f'(precisa de conta) ou <a href="{q(mailto)}">escreva para {RELATO_EMAIL}</a>. O relato '
+        "no GitHub é público: não inclua dados pessoais.</p>"
+    )
+
+
+def relato_rodape(pagina: str, titulo: str) -> str:
+    """The footer's short form, on every page: the page URL prefilled, no item."""
+    issue, mailto = relato_urls(pagina, titulo=titulo)
+    return (
+        f'Encontrou um erro? <a href="{q(issue)}">Relato no GitHub</a> ou '
+        f'<a href="{q(mailto)}">{RELATO_EMAIL}</a>.'
+    )
 
 
 def data_br(d: date | datetime) -> str:
@@ -381,11 +426,14 @@ def page(
     heading: str | None = None,
     nav: list[tuple[str, str]] | None = None,
     provenance: str | None = None,
+    relato_pagina: str | None = None,
 ) -> str:
     """The one HTML template. `url` is the canonical address; `feed_url` makes readers find the
     Atom feed from the page; `extra_head` is for JSON-LD; `root` is the relative path to the
     site root ('' on the index, '../' under fila/). `nav` replaces the header links (the fila
-    ones by default) and `provenance` the footer's data sentence, for the CMED pages."""
+    ones by default) and `provenance` the footer's data sentence, for the CMED pages.
+    `relato_pagina` replaces `url` in the footer's report link ('' on the 404, which is served at
+    any missing path, so the reader fills the page in)."""
     head = [
         '<!doctype html><html lang="pt-BR"><head><meta charset="utf-8">',
         '<meta name="viewport" content="width=device-width,initial-scale=1">',
@@ -422,7 +470,11 @@ def page(
     )
     if provenance is None:
         provenance = PROVENANCE
-    footer = f'<footer><div class="wrap"><p>{stamp}</p><p>{provenance}</p></div></footer>'
+    footer = (
+        f'<footer><div class="wrap"><p>{stamp}</p><p>{provenance}</p>'
+        f"<p>{relato_rodape(url if relato_pagina is None else relato_pagina, title)}</p>"
+        "</div></footer>"
+    )
     return (
         "".join(head)
         + header
@@ -754,6 +806,7 @@ def build_site(
                 queue_block
             )
         body += events + queue_block + history_html(days_events[:-1])
+        body += relato(f"{base_url}/fila/{sub}.html", f"subfila {sub} ({name})")
         description = (
             f"Fila de análise da ANVISA, {name} ({grupo}, {area}): "
             f"{n} processos em {data_br(rows_day)}. "
@@ -834,6 +887,7 @@ def build_site(
             root=f"{base_url}/",
             extra_head='<meta name="robots" content="noindex">',
             nav=fila_nav(f"{base_url}/", cmed=bool(cmed)),
+            relato_pagina="",
         ),
         encoding="utf-8",
     )

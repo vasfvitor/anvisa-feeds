@@ -124,6 +124,15 @@ def n(value: int) -> str:
     return f"{value:,}".replace(",", ".")
 
 
+def cnpj_fmt(cnpj: str) -> str:
+    """A CNPJ as people write it: '00029372000140' → '00.029.372/0001-40'. Anything that is not
+    14 letters or digits (the alphanumeric CNPJ keeps the same mask) comes back as it is."""
+    c = cnpj.strip()
+    if len(c) != 14 or not c.isalnum() or not c.isascii():
+        return cnpj
+    return f"{c[:2]}.{c[2:5]}.{c[5:8]}/{c[8:12]}-{c[12:]}"
+
+
 def money(centavos: int | None) -> str:
     if centavos is None:
         return "–"
@@ -437,6 +446,7 @@ def build_cmed(
         *,
         group_by: str,
         extra: str,
+        item: str,
     ) -> None:
         feed_url = f"{base_url}/cmed/{kind}/{ident}.xml"
         page_url = f"{base_url}/cmed/{kind}/{ident}.html"
@@ -502,6 +512,7 @@ def build_cmed(
                 + table_block
             )
         body += content + table_block + history_html(history[:-1], events_by_month)
+        body += feeds.relato(page_url, item)
         description = (
             f"Preços máximos de medicamentos da CMED, {name}: {count} apresentações "
             f"({lista(latest_stamp)}). Feed Atom com o que entrou, saiu e mudou de preço a "
@@ -550,6 +561,7 @@ def build_cmed(
             {stamp: g.get(name, []) for stamp, g in subst_events.items()},
             group_by="substancia",
             extra="",
+            item=name,
         )
 
     # laboratórios, by CNPJ; the name is the latest row's
@@ -572,6 +584,7 @@ def build_cmed(
             {stamp: g.get(cnpj, []) for stamp, g in lab_events.items()},
             group_by="cnpj",
             extra=f"<span>CNPJ {cnpj}</span>",
+            item=f"{lab_name[cnpj]} (CNPJ {cnpj_fmt(cnpj)})",
         )
 
     # the general feed: every event of the month, no table (the index has the highlights)
