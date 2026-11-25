@@ -1,0 +1,43 @@
+# Issue form for readers who find a problem on the site. The same file is in the five health site repos
+# (ans-feeds, anvisa-feeds, portal-saude, anvisa-hub, anvisa-dash): a change goes to all five. The pages
+# link here with `pagina`, `item` and `title` filled in by query string, so the field ids are a contract
+# with each site's link helper. The `relato` label must exist in the repo to be applied.
+name: Problema num dado ou numa página
+description: Um valor ou uma data que não bate com a fonte oficial, um link quebrado, um texto errado.
+title: "Problema em "
+labels: [relato]
+body:
+  - type: markdown
+    attributes:
+      value: >-
+        Este relato é público. Não escreva dados pessoais: CPF, telefone, endereço, número da carteirinha
+        do plano ou dados de saúde.
+  - type: input
+    id: pagina
+    attributes:
+      label: Página
+      description: O endereço da página onde está o problema.
+      placeholder: https://
+    validations:
+      required: true
+  - type: input
+    id: item
+    attributes:
+      label: Item
+      description: O produto, a empresa, a operadora, a subfila ou a substância, com o número que a página mostra.
+    validations:
+      required: false
+  - type: textarea
+    id: problema
+    attributes:
+      label: O que está errado
+      description: O que a página mostra e por que parece errado.
+    validations:
+      required: true
+  - type: textarea
+    id: fonte
+    attributes:
+      label: O que a fonte oficial mostra
+      description: Se puder, cole o link da página da ANVISA, da ANS ou da CMED com o valor certo.
+    validations:
+      required: false

@@ -99,6 +99,11 @@ Data:
   either.
 - A failure to load data in the browser is said ("não foi possível carregar as medidas"), never left
   looking like "nenhuma medida".
+- Every page that shows data has a way to report a problem: the issue form
+  `.github/ISSUE_TEMPLATE/problema.yml` (identical in the five repos; its field ids `pagina` and `item`
+  are prefilled by the page's link) and the address ajuda@abelhaninja.de, with the page and the item
+  filled in. On a page about one item it comes after the data and its sources; every page has it in the
+  footer. The reader is told that the GitHub report is public and must carry no personal data.
 
 Writing (public text is pt-BR, for people who do not know the jargon):
 
